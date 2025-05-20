@@ -14,8 +14,10 @@ class Role extends Model
         'description',
     ];
 
-    public function project()
-    {
-                return $this->belongsToMany(Project::class, 'project_role');
-    }
+    public function projects()
+{
+    return $this->belongsToMany(Project::class, 'project_role')
+                ->withPivot('description');
+                
+}
 }
