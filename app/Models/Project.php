@@ -28,4 +28,19 @@ class Project extends Model
     {
         return $this->belongsTo(User::class);
     }
+   public function roles()
+{
+    return $this->belongsToMany(Role::class, 'project_role')
+                ->withPivot('description');
+              
+}
+
+    public function domains(){
+        return $this->belongsToMany(Domain::class);
+    }
+    public function projectRoles()
+{
+    return $this->hasMany(ProjectRole::class);
+}
+    
 }
