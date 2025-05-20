@@ -11,5 +11,11 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::get('/register', [Controller::class, 'register']);
-Route::apiResource('projects', ProjectController::class);
+Route::apiResource('projects', ProjectController::class)->only(["index", "show"]);
 Route::apiResource('roles', RoleController::class);
+
+
+// ------------------- ROUTES PROTÉGÉES ------------------- //
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
+});
