@@ -41,7 +41,7 @@ class ProjectController extends Controller
         'role_skills.*.description' => 'nullable|string',
     ]);
 
-    $user = User::find(1);  //@TODO : ajout de auth pour recuperer l'utilisateur connecté
+    $user = auth()->user();
 
     if ($validator->fails()) {
         return response()->json(['errors' => $validator->errors()], 422);
@@ -115,12 +115,19 @@ class ProjectController extends Controller
     // Mise à jour du projet et relations
     public function update(Request $request, $id)
     {
-         //@TODO : ajout de la condition de modification
+
+         $user = auth()->user();
+       
         $project = Project::find($id);
 
         if (!$project) {
             return response()->json(['error' => 'Projet non trouvé'], 404);
         }
+         if($user->id !== $project->created_by){
+            return response()->json([
+                'error' => 'Unauthorized'
+            ]);
+        } 
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255|unique:projects,title,' . $project->id,
@@ -197,8 +204,15 @@ class ProjectController extends Controller
  // Suppression d'un projet avec relations pivot
     public function destroy($id)
     {
-        //@TODO : ajout de la condition de suppression
+       
+        $user = auth()->user();
+       
         $project = Project::find($id);
+         if($user->id !== $project->created_by){
+            return response()->json([
+                'error' => 'Unauthorized'
+            ]);
+        } 
 
         if (!$project) {
             return response()->json(['error' => 'Projet non trouvé'], 404);
