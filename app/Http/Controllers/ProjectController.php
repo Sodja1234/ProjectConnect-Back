@@ -51,8 +51,8 @@ class ProjectController extends Controller
         $project = Project::create([
             'title' => $request->title,
             'description' => $request->description,
-            'start_date' => $request->date_start,
-            'end_date' => $request->date_end,
+            'date_start' => $request->date_start,
+            'date_end' => $request->date_end,
             'budget' => $request->budget,
             'location' => $request->location,
             'visibility' => $request->visibility,
@@ -153,7 +153,7 @@ class ProjectController extends Controller
         try {
             // Mise à jour simple des champs du projet
             $project->update($request->only([
-                'title', 'description', 'start_date', 'end_date', 'budget', 'location', 'visibility'
+                'title', 'description', 'date_start', 'date_end', 'budget', 'location', 'visibility'
             ]));
 
             // Mettre à jour les domaines si fournis
