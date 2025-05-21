@@ -16,8 +16,8 @@ return new class extends Migration
              $table->string('title');
            
             $table->text('description');
-            $table->dateTime('date_start')->nullable();
-            $table->dateTime('date_end')->nullable();
+            $table->date('date_start')->nullable();
+            $table->date('date_end')->nullable();
             $table->decimal('budget', 10, 2)->nullable();
             $table->string('location')->nullable();
             $table->enum('visibility', ['public',  'private'])->default('public');
