@@ -8,8 +8,9 @@ use App\Models\Project;
 use App\Models\ProjectRole;
 use App\Models\Role;
 use App\Models\Skill;
-use Request;
-use Validator;	
+
+use Illuminate\Http\Request;
+use Validator;
 
 
 
