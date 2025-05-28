@@ -24,3 +24,5 @@ Route::apiResource('skills', SkillController::class);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show", "store"]);
 });
+
+require __DIR__ . '/api-auth.php';
