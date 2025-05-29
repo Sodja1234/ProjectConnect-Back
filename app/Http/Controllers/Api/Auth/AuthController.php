@@ -25,7 +25,8 @@ class AuthController extends Controller
         if ($validation->fails()) {
             return response()->json([
                 'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
-                'errors' => $validation->errors()
+                'errors' => $validation->errors(),
+                'message' => "Veuillez corriger les erreurs dans le formulaire."
             ]);
         }
 
@@ -37,6 +38,14 @@ class AuthController extends Controller
         if (!$user instanceof User || !Hash::check($password, $user->password)) {
             return response()->json([
                 'status' => Response::HTTP_NOT_FOUND,
+                'message' => "Adresse e-mail ou mot de passe incorrect"
+            ]);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            return response()->json([
+                'status' => Response::HTTP_FORBIDDEN,
+                'message' => "Veuillez confirmer votre adresse e-mail pour activer votre compte"
             ]);
         }
 
