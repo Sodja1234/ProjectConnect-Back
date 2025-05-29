@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
@@ -11,7 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
 class NewPasswordController extends Controller
@@ -30,9 +29,11 @@ class NewPasswordController extends Controller
         ]);
 
         if ($validation->fails()) {
+
             return response()->json([
                 'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
-                'errors' => $validation->errors()
+                 'errors' => $validation->errors(),
+                'message' => "Veuillez corriger les erreurs dans le formulaire."
             ]);
         }
 
@@ -56,7 +57,7 @@ class NewPasswordController extends Controller
         }
 
         return response()->json([
-            'status' => Response::HTTP_NO_CONTENT,
+            'status' => Response::HTTP_OK
         ]);
     }
 }
