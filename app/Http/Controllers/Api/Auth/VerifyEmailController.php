@@ -23,8 +23,6 @@ class VerifyEmailController extends Controller
             ]);
         }
 
-
-
         if ($user->hasVerifiedEmail()) {
             return $this->getAuthUser($user);
         }
