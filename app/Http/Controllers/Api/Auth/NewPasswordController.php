@@ -2,41 +2,19 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Http\Requests\Auth\NewPasswordRequest;
 use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rules;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
 class NewPasswordController extends Controller
 {
-    /**
-     * Handle an incoming new password request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(NewPasswordRequest $request): JsonResponse
     {
-        $validation = Validator::make($request->all(), [
-            'token' => ['required'],
-            'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
-
-        if ($validation->fails()) {
-
-            return response()->json([
-                'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
-                 'errors' => $validation->errors(),
-                'message' => "Veuillez corriger les erreurs dans le formulaire."
-            ]);
-        }
-
         $message = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
