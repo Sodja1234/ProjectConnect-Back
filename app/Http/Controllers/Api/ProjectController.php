@@ -8,11 +8,8 @@ use App\Models\Skill;
 use App\Models\Domain;
 use App\Models\Project;
 use App\Models\ProjectRole;
-
 use Illuminate\Http\Request;
 use App\Http\Resources\ProjectResource;
-
-
 
 class ProjectController extends Controller
 {
