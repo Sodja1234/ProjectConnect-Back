@@ -7,7 +7,6 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class PasswordResetLinkController extends Controller
@@ -22,7 +21,8 @@ class PasswordResetLinkController extends Controller
         if ($validation->fails()) {
             return response()->json([
                 'status' => Response::HTTP_UNPROCESSABLE_ENTITY,
-                'errors' => $validation->errors()
+                'errors' => $validation->errors(),
+                'message' => "Veuillez corriger les erreurs dans le formulaire."
             ]);
         }
 
@@ -33,12 +33,10 @@ class PasswordResetLinkController extends Controller
         if ($message != Password::RESET_LINK_SENT) {
             return response()->json([
                 'status' => Response::HTTP_NOT_FOUND,
-                'message' => $message
+                'message' => trans($message)
             ]);
         }
 
-        return response()->json([
-            'status' => Response::HTTP_OK,
-        ]);
+        return response()->json(['status' => Response::HTTP_OK]);
     }
 }

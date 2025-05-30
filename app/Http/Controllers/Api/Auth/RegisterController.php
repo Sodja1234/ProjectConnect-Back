@@ -26,7 +26,8 @@ class RegisterController extends Controller
         if ($validation->fails()) {
             return response()->json([
                 'status' => HttpResponse::HTTP_UNPROCESSABLE_ENTITY,
-                'errors' => $validation->errors()
+                'errors' => $validation->errors(),
+                'message' => "Veuillez corriger les erreurs dans le formulaire."
             ]);
         }
 
@@ -39,6 +40,8 @@ class RegisterController extends Controller
 
         event(new RegisteredUserEvent($user));
 
-        return response()->noContent();
+        return response()->json([
+            'status' => HttpResponse::HTTP_CREATED,
+        ]);
     }
 }
