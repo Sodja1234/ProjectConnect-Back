@@ -2,15 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Resources\ProjectResource;
+use Validator;
+use App\Models\Role;
+use App\Models\Skill;
 use App\Models\Domain;
 use App\Models\Project;
 use App\Models\ProjectRole;
+<<<<<<< HEAD
 use App\Models\Role;
 use App\Models\Skill;
 
 use Illuminate\Http\Request;
 use Validator;
+=======
+
+use Illuminate\Http\Request;
+use App\Http\Resources\ProjectResource;
+>>>>>>> c171c56 (Correction de l'erreur lier à la création de projet de manière protèger)
 
 
 
@@ -48,7 +56,7 @@ class ProjectController extends Controller
             'role_skills.*.description' => 'nullable|string',
         ]);
 
-        $user = auth()->user();
+        $user = $request->user();
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
