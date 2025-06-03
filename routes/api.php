@@ -7,13 +7,15 @@ use App\Http\Controllers\Api\Controller;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\DomainController;
+use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\MessageController;
 
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::get('/register', [Controller::class, 'register']);
+//Route::get('/register', [Controller::class, 'register']);
 Route::apiResource('projects', ProjectController::class)->only(["index", "show"]);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
@@ -22,6 +24,13 @@ Route::apiResource('skills', SkillController::class);
 
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
+    
+     Route::get('/chats', [ChatController::class, 'index']);
+    Route::post('/chats', [ChatController::class, 'store']);
+
+    Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
+    Route::post('/messages', [MessageController::class, 'store']);
+   
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
 });
 
