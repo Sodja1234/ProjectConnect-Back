@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\ProjectController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Controller;
@@ -8,9 +7,10 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\DomainController;
 use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\CandidacyController;
+use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\API\MessageController;
-use \App\Http\Controllers\CandidacyController;
-
+use App\Http\Controllers\Api\ProjectController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -21,6 +21,7 @@ Route::apiResource('projects', ProjectController::class)->only(["index", "show"]
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
+
 
 
 
@@ -38,6 +39,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/messages', [MessageController::class, 'store']);
    
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
+    Route::apiResource('portfolios',PortfolioController::class);
+    Route::get('myPortfolio',[PortfolioController::class,'myPortfolio']);
+    
+
 });
 
 require __DIR__ . '/api-auth.php';
