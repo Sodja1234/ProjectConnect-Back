@@ -4,10 +4,13 @@ namespace App\Models;
 
 <<<<<<< HEAD
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 =======
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
@@ -60,4 +63,22 @@ class User extends Authenticatable implements MustVerifyEmail
      public function users(): BelongsToMany{
         return $this->belongsToMany(user::class);
      }
+     public function skills(): BelongsToMany{
+         return $this->belongsToMany(Skill::class);
+     }
+     public function users(): BelongsToMany{
+        return $this->belongsToMany(user::class);
+     }
+
+    public function candidacies()
+    {
+        return $this->hasMany(Candidacy::class);
+    }
+
+    public function appliedProjectRoles()
+    {
+        return $this->belongsToMany(ProjectRole::class, 'candidacies')
+            ->withPivot('is_validated')->withTimestamps();
+
+    }
 }
