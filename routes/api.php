@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\Controller;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\DomainController;
+use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\MessageController;
 use \App\Http\Controllers\CandidacyController;
 
 
@@ -28,6 +30,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/project-roles/{id}/apply',[CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
 
+    
+     Route::get('/chats', [ChatController::class, 'index']);
+    Route::post('/chats', [ChatController::class, 'store']);
+
+    Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
+    Route::post('/messages', [MessageController::class, 'store']);
+   
+    Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
 });
 
 require __DIR__ . '/api-auth.php';
