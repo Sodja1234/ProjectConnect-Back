@@ -11,11 +11,5 @@ class Skill extends Model
     {
         return $this->belongsToMany(portfolio::class);
     }
-public function skills()
-    {
-        return $this->belongsToMany(
-            Skill::class,
-            'portfolio_skill'
-        );
-    }
+
 }

@@ -6,10 +6,12 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -52,7 +54,9 @@ class User extends Authenticatable implements MustVerifyEmail
      public function skills(): BelongsToMany{
          return $this->belongsToMany(Skill::class);
      }
-     public function users(): BelongsToMany{
-        return $this->belongsToMany(user::class);
+
+     public function portfolios(): HasMany{
+        return $this->hasMany(Portfolio::class);
      }
+   
 }
