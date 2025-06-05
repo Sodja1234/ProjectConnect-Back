@@ -21,8 +21,20 @@ Route::apiResource('skills', SkillController::class);
 
 
 
+
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
+    Route::post('/project-roles/{id}/apply',[CandidacyController::class, 'store']);
+    Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
+
+    
+     Route::get('/chats', [ChatController::class, 'index']);
+    Route::post('/chats', [ChatController::class, 'store']);
+
+    Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
+    Route::post('/messages', [MessageController::class, 'store']);
+   
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::apiResource('portfolios',PortfolioController::class);
     Route::get('myPortfolio',[PortfolioController::class,'myPortfolio']);
