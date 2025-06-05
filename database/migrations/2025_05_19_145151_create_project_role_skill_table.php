@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('project_role_skill', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('project_role_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('project_role_id')->constrained('project_role')->cascadeOnDelete();
             $table->foreignId('skill_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
