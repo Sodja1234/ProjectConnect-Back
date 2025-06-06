@@ -31,7 +31,10 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $query = Candidacy::query();
+        // Commencez la requête en filtrant par le project_id
+        $query = Candidacy::whereHas('projectRole', function($q) use ($projectId) {
+            $q->where('project_id', $projectId);
+        });
 
         // Filtre par nom de rôle
         if ($request->has('role_name')) {
@@ -53,9 +56,11 @@ class CandidacyController extends Controller
         }
 
         // Chargement des relations
-        $query->with('projectRole.role', 'user');
+        $query->with(['projectRole' => function($q) {
+            $q->with('role');
+        }, 'user']);
 
-        // Pagination (avec 10 éléments par page par défaut)
+        // Pagination
         $perPage = $request->per_page ?? 10;
         $candidacies = $query->paginate($perPage);
 
