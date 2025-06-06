@@ -31,46 +31,42 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $query = Candidacy::with(['user', 'projectRole.role'])
-            ->whereHas('projectRole', fn($q) => $q->where('project_id', $projectId));
+        $query = Candidacy::query();
 
-        // Filtres
+        // Filtre par nom de rôle
         if ($request->has('role_name')) {
-            $query->whereHas('projectRole.role', fn($q) =>
-            $q->where('name', 'like', '%'.$request->role_name.'%'));
+            $query->whereHas('projectRole.role', function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->role_name . '%');
+            });
         }
 
+        // Filtre par nom d'utilisateur
         if ($request->has('user_name')) {
-            $query->whereHas('user', fn($q) =>
-            $q->where('name', 'like', '%'.$request->user_name.'%'));
+            $query->whereHas('user', function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->user_name . '%');
+            });
         }
 
-        if ($request->has('is_validated')) {
+        // Filtre par statut de validation
+        if ($request->has('is_validated') && in_array($request->is_validated, [0, 1])) {
             $query->where('is_validated', $request->is_validated);
         }
 
-        // Pagination
-        $perPage = $request->per_page ?? 15;
+        // Chargement des relations
+        $query->with('projectRole.role', 'user');
+
+        // Pagination (avec 10 éléments par page par défaut)
+        $perPage = $request->per_page ?? 10;
         $candidacies = $query->paginate($perPage);
 
         return response()->json([
-            'message' => "Candidatures pour le projet: {$project->name}",
-            'meta' => [
-                'total' => $candidacies->total(),
-                'per_page' => $candidacies->perPage(),
-                'current_page' => $candidacies->currentPage(),
-                'last_page' => $candidacies->lastPage(),
-                'from' => $candidacies->firstItem(),
-                'to' => $candidacies->lastItem(),
-                'links' => [
-                    'first' => $candidacies->url(1),
-                    'last' => $candidacies->url($candidacies->lastPage()),
-                    'prev' => $candidacies->previousPageUrl(),
-                    'next' => $candidacies->nextPageUrl(),
-                ],
-            ],
-            'filters' => $request->only(['role_name', 'user_name', 'is_validated', 'per_page']),
-            'data' => CandidacyResource::collection($candidacies)
+            "data" => CandidacyResource::collection($candidacies),
+            "meta" => [
+                "current_page" => $candidacies->currentPage(),
+                "last_page" => $candidacies->lastPage(),
+                "per_page" => $candidacies->perPage(),
+                "total" => $candidacies->total(),
+            ]
         ]);
     }
     /**
