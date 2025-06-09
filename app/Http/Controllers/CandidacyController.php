@@ -80,18 +80,24 @@ class CandidacyController extends Controller
     public function store(Request $request, $id)
     {
         try {
-            $projectRole = ProjectRole::findOrFail($id);
+            // Récupération du ProjectRole avec son projet associé
+            $projectRole = ProjectRole::with('project')->findOrFail($id);
 
+            // Vérifie si l'utilisateur a déjà postulé au même rôle dans le même projet
             $existing = Candidacy::where('user_id', auth()->id())
-                ->where('project_role_id', $projectRole->id)
-                ->first();
+                ->whereHas('projectRole', function ($query) use ($projectRole) {
+                    $query->where('role_id', $projectRole->role_id)
+                        ->where('project_id', $projectRole->project_id);
+                })
+                ->exists();
 
             if ($existing) {
                 return response()->json([
-                    'message' => 'Vous avez déjà postulé à ce rôle.'
+                    'message' => 'Vous avez déjà postulé à ce rôle dans ce projet.'
                 ], 422);
             }
 
+            // Création de la nouvelle candidature
             $candidacy = Candidacy::create([
                 'user_id' => auth()->id(),
                 'project_role_id' => $projectRole->id,
@@ -101,6 +107,7 @@ class CandidacyController extends Controller
                 'message' => 'Candidature soumise avec succès.',
                 'data' => $candidacy,
             ], 201);
+
         } catch (\Throwable $e) {
             Log::error('Erreur Candidacy store: ' . $e->getMessage());
             return response()->json([
@@ -108,6 +115,8 @@ class CandidacyController extends Controller
             ], 500);
         }
     }
+
+
 
     /**
      * Display the specified resource.
