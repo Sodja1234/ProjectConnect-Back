@@ -2,19 +2,12 @@
 
 namespace App\Models;
 
-<<<<<<< HEAD
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-=======
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
->>>>>>> 2253bd2 (ajout de la relation belongtoMany dans le model User)
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -60,12 +53,7 @@ class User extends Authenticatable implements MustVerifyEmail
      public function users(): BelongsToMany{
         return $this->belongsToMany(user::class);
      }
-     public function skills(): BelongsToMany{
-         return $this->belongsToMany(Skill::class);
-     }
-     public function users(): BelongsToMany{
-        return $this->belongsToMany(user::class);
-     }
+ 
 
     public function candidacies()
     {
@@ -77,5 +65,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(ProjectRole::class, 'candidacies')
             ->withPivot('is_validated')->withTimestamps();
 
+    }
+    public function following(){
+        return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
+    }
+
+    public function followers(){
+        return $this->belongsToMany(User::class,'followers', 'following_id', 'followers_id');
     }
 }
