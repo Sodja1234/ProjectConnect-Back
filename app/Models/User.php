@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -46,4 +50,25 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
+     public function skills(): BelongsToMany{
+         return $this->belongsToMany(Skill::class);
+     }
+     
+
+    public function candidacies()
+    {
+        return $this->hasMany(Candidacy::class);
+    }
+
+    public function appliedProjectRoles()
+    {
+        return $this->belongsToMany(ProjectRole::class, 'candidacies')
+            ->withPivot('is_validated')->withTimestamps();
+
+    }
+
+     public function portfolios(): HasMany{
+        return $this->hasMany(Portfolio::class);
+     }
+   
 }

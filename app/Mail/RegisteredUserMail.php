@@ -40,7 +40,7 @@ class RegisteredUserMail extends Mailable
      */
     public function content(): Content
     {
-        $url = $this->getUrlSigned();
+        $url = $this->generateVerificationUrl();
 
         return new Content(
             markdown: 'mail.registered-user-mail',
@@ -61,20 +61,11 @@ class RegisteredUserMail extends Mailable
         return [];
     }
 
-    private function getUrlSigned(): string
+    private function generateVerificationUrl(): string
     {
-        $signedUrl = URL::temporarySignedRoute(
-            'verification.verify',
-            now()->addMinutes(60),
-            [
-                'id' => $this->user->id,
-                'hash' => sha1($this->user->email),
-            ]
-        );
+        $userId = $this->user->id;
+        $hash = sha1($this->user->email);
 
-        $encodedSignedUrl = urlencode($signedUrl);
-
-        return config('app.frontend_url') . '/verify-email?callback=' . $encodedSignedUrl;
+        return config('app.frontend_url') . "/verify-email/{$userId}/{$hash}";
     }
-
 }

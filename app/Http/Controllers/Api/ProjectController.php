@@ -3,18 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 
-use App\Models\Role;
 use App\Models\Skill;
+
+use App\Models\Role;
+
 use App\Models\Domain;
 use App\Models\Project;
 use App\Models\ProjectRole;
-
 use Illuminate\Http\Request;
-
 use App\Http\Resources\ProjectResource;
+use Illuminate\Support\Facades\Validator;
+
+
+
 use App\Models\User;
 
-use Illuminate\Support\Facades\Validator;
+
 
 
 
@@ -65,7 +69,8 @@ class ProjectController extends Controller
             'role_skills.*.description' => 'nullable|string',
         ]);
 
-        $user = User::find(1);
+        $user = $request->user();
+       
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
