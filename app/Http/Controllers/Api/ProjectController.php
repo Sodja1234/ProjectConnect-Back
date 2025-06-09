@@ -2,28 +2,46 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Resources\ProjectResource;
+
+use App\Models\Role;
+use App\Models\Skill;
 use App\Models\Domain;
 use App\Models\Project;
 use App\Models\ProjectRole;
-use App\Models\Role;
-use App\Models\Skill;
-use Request;
-use Validator;	
+
+use Illuminate\Http\Request;
+
+use App\Http\Resources\ProjectResource;
+use App\Models\User;
+
+use Illuminate\Support\Facades\Validator;
+
 
 
 
 class ProjectController extends Controller
 {
-    // Liste tous les projets avec relations
-    public function index()
+   
+    public function index(Request $request)
     {
-        $projects = Project::with([
+        $search = $request->query('search');
+        $perPage = 10;
+
+        $query = Project::with([
             'domains',
             'projectRoles.skills',
             'projectRoles.role',
             'user'
-        ])->paginate(10);
+        ]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                    ->orWhere('description', 'like', "%$search%");
+            });
+        }
+
+        $projects = $query->paginate($perPage);
 
         return ProjectResource::collection($projects);
     }
@@ -47,7 +65,7 @@ class ProjectController extends Controller
             'role_skills.*.description' => 'nullable|string',
         ]);
 
-        $user = auth()->user();
+        $user = User::find(1);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
