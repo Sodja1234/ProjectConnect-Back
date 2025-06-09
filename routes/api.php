@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\FollowController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Controller;
@@ -31,13 +32,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
 
     
-     Route::get('/chats', [ChatController::class, 'index']);
+    Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
 
     Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     Route::post('/messages', [MessageController::class, 'store']);
    
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
+
+
+    Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
+    Route::delete('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
+
+    Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
+    Route::get('/users/{user}/following', [FollowController::class, 'following']);
 });
 
 require __DIR__ . '/api-auth.php';
