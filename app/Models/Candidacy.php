@@ -14,7 +14,7 @@ class Candidacy extends Model
 
     public function projectRole()
     {
-        return $this->belongsTo(ProjectRole::class);
+        return $this->belongsTo(ProjectRole::class, 'project_role_id');
     }
     public function user()
     {
