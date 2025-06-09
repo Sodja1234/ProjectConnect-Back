@@ -31,7 +31,10 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $query = Candidacy::query();
+        // Commencez la requête en filtrant par le project_id
+        $query = Candidacy::whereHas('projectRole', function($q) use ($projectId) {
+            $q->where('project_id', $projectId);
+        });
 
         // Filtre par nom de rôle
         if ($request->has('role_name')) {
@@ -53,9 +56,11 @@ class CandidacyController extends Controller
         }
 
         // Chargement des relations
-        $query->with('projectRole.role', 'user');
+        $query->with(['projectRole' => function($q) {
+            $q->with('role');
+        }, 'user']);
 
-        // Pagination (avec 10 éléments par page par défaut)
+        // Pagination
         $perPage = $request->per_page ?? 10;
         $candidacies = $query->paginate($perPage);
 
@@ -75,18 +80,24 @@ class CandidacyController extends Controller
     public function store(Request $request, $id)
     {
         try {
-            $projectRole = ProjectRole::findOrFail($id);
+            // Récupération du ProjectRole avec son projet associé
+            $projectRole = ProjectRole::with('project')->findOrFail($id);
 
+            // Vérifie si l'utilisateur a déjà postulé au même rôle dans le même projet
             $existing = Candidacy::where('user_id', auth()->id())
-                ->where('project_role_id', $projectRole->id)
-                ->first();
+                ->whereHas('projectRole', function ($query) use ($projectRole) {
+                    $query->where('role_id', $projectRole->role_id)
+                        ->where('project_id', $projectRole->project_id);
+                })
+                ->exists();
 
             if ($existing) {
                 return response()->json([
-                    'message' => 'Vous avez déjà postulé à ce rôle.'
+                    'message' => 'Vous avez déjà postulé à ce rôle dans ce projet.'
                 ], 422);
             }
 
+            // Création de la nouvelle candidature
             $candidacy = Candidacy::create([
                 'user_id' => auth()->id(),
                 'project_role_id' => $projectRole->id,
@@ -96,6 +107,7 @@ class CandidacyController extends Controller
                 'message' => 'Candidature soumise avec succès.',
                 'data' => $candidacy,
             ], 201);
+
         } catch (\Throwable $e) {
             Log::error('Erreur Candidacy store: ' . $e->getMessage());
             return response()->json([
@@ -103,6 +115,8 @@ class CandidacyController extends Controller
             ], 500);
         }
     }
+
+
 
     /**
      * Display the specified resource.

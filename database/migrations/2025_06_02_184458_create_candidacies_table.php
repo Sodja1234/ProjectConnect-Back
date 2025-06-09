@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('project_role_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->boolean("is_validated")->default(false);
+            $table->unique(['user_id', 'project_role_id']);
+
             $table->timestamps();
         });
     }
