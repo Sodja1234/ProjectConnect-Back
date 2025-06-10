@@ -6,6 +6,7 @@ use App\Http\Resources\CandidacyResource;
 use App\Models\Candidacy;
 use App\Models\Project;
 use App\Models\ProjectRole;
+use App\Notifications\JobApplicationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -80,11 +81,13 @@ class CandidacyController extends Controller
     public function store(Request $request, $id)
     {
         try {
+            $user = $request->user();
+
             // Récupération du ProjectRole avec son projet associé
             $projectRole = ProjectRole::with('project')->findOrFail($id);
 
             // Vérifie si l'utilisateur a déjà postulé au même rôle dans le même projet
-            $existing = Candidacy::where('user_id', auth()->id())
+            $existing = Candidacy::where('user_id', $user->id)
                 ->whereHas('projectRole', function ($query) use ($projectRole) {
                     $query->where('role_id', $projectRole->role_id)
                         ->where('project_id', $projectRole->project_id);
@@ -99,9 +102,11 @@ class CandidacyController extends Controller
 
             // Création de la nouvelle candidature
             $candidacy = Candidacy::create([
-                'user_id' => auth()->id(),
+                'user_id' => $user->id,
                 'project_role_id' => $projectRole->id,
             ]);
+
+            $user->notify(new JobApplicationNotification($candidacy));
 
             return response()->json([
                 'message' => 'Candidature soumise avec succès.',
