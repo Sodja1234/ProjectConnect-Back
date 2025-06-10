@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Controller;
@@ -23,25 +24,27 @@ Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
 
 
-
-
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
-    Route::post('/project-roles/{id}/apply',[CandidacyController::class, 'store']);
+    Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
 
-    
-     Route::get('/chats', [ChatController::class, 'index']);
+
+    Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
 
     Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     Route::post('/messages', [MessageController::class, 'store']);
-   
+
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
-    Route::apiResource('portfolios',PortfolioController::class);
-    Route::get('myPortfolio',[PortfolioController::class,'myPortfolio']);
-    
+    Route::apiResource('portfolios', PortfolioController::class);
+    Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
+
+    Route::get('/notification/{id}', [NotificationController::class, 'show']);
+    Route::get('/notification/{id}/read', [NotificationController::class, 'read']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
 
 });
 
