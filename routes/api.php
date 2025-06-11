@@ -46,6 +46,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/notification/{id}/destroy', [NotificationController::class, 'destroy']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
+    Route::post('/mark-as-read/notification', [NotificationController::class, 'markAllAsRead']);
 });
 
 require __DIR__ . '/api-auth.php';
