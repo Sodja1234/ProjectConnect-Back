@@ -18,7 +18,8 @@ class CandidacyController extends Controller
      */
     public function index($projectId, Request $request)
     {
-        $user = auth()->user();
+        $user = $request->user();
+        
         if (!$user) {
             return response()->json(['message' => 'Authentification requise'], 401);
         }
@@ -106,7 +107,7 @@ class CandidacyController extends Controller
                 'project_role_id' => $projectRole->id,
             ]);
 
-            $user->notify(new JobApplicationNotification($candidacy));
+            $user->notify(new JobApplicationNotification($candidacy, $projectRole));
 
             return response()->json([
                 'message' => 'Candidature soumise avec succès.',
