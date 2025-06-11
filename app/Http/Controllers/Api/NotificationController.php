@@ -30,25 +30,16 @@ class NotificationController extends Controller
         return NotificationResource::collection($notifications);
     }
 
-    public function show(Request $request, int $id)
+    public function show(Request $request, string $id)
     {
         $user = $request->user();
 
         $notification = $user->notifications()->findOrFail($id);
+
+        if ($notification->read_at === null) {
+            $notification->markAsRead();
+        }
 
         return new NotificationResource($notification);
-    }
-
-    public function read(Request $request, int $id)
-    {
-        $user = $request->user();
-
-        $notification = $user->notifications()->findOrFail($id);
-
-        $status = $notification->read();
-
-        return response()->json([
-            'status' => $status,
-        ]);
     }
 }

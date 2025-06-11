@@ -42,10 +42,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
 
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
-    Route::get('/notification/{id}/read', [NotificationController::class, 'read']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
-
 });
 
 require __DIR__ . '/api-auth.php';
