@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Candidacy;
+use App\Models\ProjectRole;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,9 +13,10 @@ class JobApplicationNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private Candidacy $candidacy)
-    {
-    }
+    public function __construct(
+        private Candidacy $candidacy,
+        private ProjectRole $projectRole
+    ) {}
 
     /**
      * @return array<int, string>
@@ -26,7 +28,7 @@ class JobApplicationNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $jobTitle = $this->candidacy->projectRole->project->title ?? 'le poste';
+        $jobTitle = $this->projectRole->project->title ?? 'le poste';
 
         $url = url(config('app.frontend_url') . "/candidacy/{$this->candidacy->id}");
 
@@ -46,7 +48,7 @@ class JobApplicationNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
-        $jobTitle = $this->candidacy->projectRole->project->title ?? 'le poste';
+        $jobTitle = $this->projectRole->project->title ?? 'le poste';
 
         return [
             'candidacy_id' => $this->candidacy->id,

@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('candidacies', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('project_role_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('project_role_id')->constrained('project_role')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->boolean("is_validated")->default(false);
             $table->unique(['user_id', 'project_role_id']);
 
