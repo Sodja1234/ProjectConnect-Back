@@ -43,7 +43,22 @@ class NotificationController extends Controller
         return new NotificationResource($notification);
     }
 
-        public function destroy(Request $request, string $id)
+    public function markAllAsRead(Request $request)
+    {
+        $user = $request->user();
+
+        $notifications = $user->notifications()->get();
+
+        foreach ($notifications as $notification) {
+            $notification->markAsRead();
+        }
+
+        return response()->json([
+            'status' => 200,
+        ]);
+    }
+
+    public function destroy(Request $request, string $id)
     {
         $user = $request->user();
 
