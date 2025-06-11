@@ -12,6 +12,7 @@ use App\Http\Controllers\CandidacyController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\ExperienceController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -40,7 +41,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::apiResource('portfolios', PortfolioController::class);
     Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
-
+     Route::apiResource('experiences', ExperienceController::class);
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
     Route::delete('/notification/{id}/destroy', [NotificationController::class, 'destroy']);
     Route::get('/notifications', [NotificationController::class, 'index']);
