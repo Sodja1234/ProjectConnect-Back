@@ -42,4 +42,17 @@ class NotificationController extends Controller
 
         return new NotificationResource($notification);
     }
+
+        public function destroy(Request $request, string $id)
+    {
+        $user = $request->user();
+
+        $notification = $user->notifications()->findOrFail($id);
+
+        $deleted = $notification->delete();
+
+        return response()->json([
+            'status' => $deleted,
+        ]);
+    }
 }

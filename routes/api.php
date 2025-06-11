@@ -42,6 +42,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
 
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
+    Route::delete('/notification/{id}/destroy', [NotificationController::class, 'destroy']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
 });
