@@ -2,13 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class FollowController extends Controller
 {
-    public function follow(User $user)
+    // public function __construct()
+    // {
+    //     $this->middleware('auth:sanctum');
+    // }
+
+    public function follow(User $user): JsonResponse
     {
         $follower = Auth::user();
 
@@ -16,27 +23,60 @@ class FollowController extends Controller
             return response()->json(['message' => 'Vous ne pouvez pas vous suivre vous-même.'], 403);
         }
 
-        $follower->following()->syncWithoutDetaching([$user->id]);
+        if ($follower->following()->where('following_id', $user->id)->exists()) {
+            return response()->json(['message' => 'Vous suivez déjà cet utilisateur.'], 409);
+        }
 
-        return response()->json(['message' => 'Utilisateur suivi avec succès.']);
+        $follower->following()->attach($user->id);
+
+        return response()->json([
+            'message' => 'Utilisateur suivi avec succès.',
+            'is_following' => true,
+        ]);
     }
 
-    public function unfollow(User $user)
+    public function unfollow(User $user): JsonResponse
     {
         $follower = Auth::user();
 
+        if (! $follower->following()->where('following_id', $user->id)->exists()) {
+            return response()->json(['message' => 'Vous ne suivez pas cet utilisateur.'], 404);
+        }
+
         $follower->following()->detach($user->id);
 
-        return response()->json(['message' => 'Utilisateur désuivi avec succès.']);
+        return response()->json([
+            'message' => 'Utilisateur désuivi avec succès.',
+            'is_following' => false,
+        ]);
     }
 
-    public function followers(User $user)
+    public function followers(User $user): JsonResponse
     {
-        return response()->json($user->followers);
+        return response()->json(UserResource::collection($user->followers));
     }
 
-    public function following(User $user)
+    public function following(User $user): JsonResponse
     {
-        return response()->json($user->following);
+        return response()->json(UserResource::collection($user->following));
+    }
+
+    public function isFollowing(User $user): JsonResponse
+    {
+        $follower = Auth::user();
+        $isFollowing = $follower->following()->where('following_id', $user->id)->exists();
+
+        return response()->json(['is_following' => $isFollowing]);
+    }
+
+    public function followCounts(User $user): JsonResponse
+    {
+        $followersCount = $user->followers()->count();
+        $followingCount = $user->following()->count();
+
+        return response()->json([
+            'followers_count' => $followersCount,
+            'following_count' => $followingCount,
+        ]);
     }
 }

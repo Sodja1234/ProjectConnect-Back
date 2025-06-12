@@ -48,10 +48,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
-    Route::delete('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
-
+    Route::post('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
     Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
     Route::get('/users/{user}/following', [FollowController::class, 'following']);
+    Route::get('/users/{user}/is-following', [FollowController::class, 'isFollowing']);
+    Route::get('/users/{user}/follow-counts', [FollowController::class, 'followCounts']);
 });
 
 require __DIR__ . '/api-auth.php';
