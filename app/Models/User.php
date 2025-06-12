@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -53,7 +50,10 @@ class User extends Authenticatable implements MustVerifyEmail
      public function skills(): BelongsToMany{
          return $this->belongsToMany(Skill::class);
      }
-     
+     public function users(): BelongsToMany{
+        return $this->belongsToMany(user::class);
+     }
+ 
 
     public function candidacies()
     {
@@ -66,9 +66,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('is_validated')->withTimestamps();
 
     }
+    public function following(){
+        return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
+    }
 
-     public function portfolios(): HasMany{
-        return $this->hasMany(Portfolio::class);
-     }
-   
+    public function followers(){
+        return $this->belongsToMany(User::class,'followers', 'following_id', 'followers_id');
+    }
 }
