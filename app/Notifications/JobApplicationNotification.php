@@ -16,7 +16,8 @@ class JobApplicationNotification extends Notification implements ShouldQueue
     public function __construct(
         private Candidacy $candidacy,
         private ProjectRole $projectRole
-    ) {}
+    ) {
+    }
 
     /**
      * @return array<int, string>
@@ -30,7 +31,7 @@ class JobApplicationNotification extends Notification implements ShouldQueue
     {
         $jobTitle = $this->projectRole->project->title ?? 'le poste';
 
-        $url = url(config('app.frontend_url') . "/candidacy/{$this->candidacy->id}");
+        $url = $this->getUrlDetails();
 
         return (new MailMessage)
             ->subject("Votre candidature a été envoyée avec succès")
@@ -54,6 +55,12 @@ class JobApplicationNotification extends Notification implements ShouldQueue
             'candidacy_id' => $this->candidacy->id,
             'title' => $jobTitle,
             'message' => "Votre candidature pour le projet  \"{$jobTitle}\" a été envoyée avec succès.",
+            'link' => $this->getUrlDetails(),
         ];
+    }
+
+    private function getUrlDetails()
+    {
+        return url(config('app.frontend_url') . "/candidacy/{$this->candidacy->id}");
     }
 }
