@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,9 +24,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'slug'
     ];
 
     /**
+     *
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -47,13 +50,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
-     public function skills(): BelongsToMany{
-         return $this->belongsToMany(Skill::class);
-     }
-     public function users(): BelongsToMany{
-        return $this->belongsToMany(user::class);
-     }
- 
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class);
+    }
+
 
     public function candidacies()
     {
@@ -66,11 +67,18 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('is_validated')->withTimestamps();
 
     }
-    public function following(){
+    public function following()
+    {
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
     }
 
-    public function followers(){
-        return $this->belongsToMany(User::class,'followers', 'following_id', 'followers_id');
+    public function portfolios(): HasMany
+    {
+        return $this->hasMany(Portfolio::class);
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'followers', 'following_id', 'followers_id');
     }
 }
