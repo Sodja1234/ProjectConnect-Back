@@ -12,7 +12,7 @@ class ChatSeeder extends Seeder
     public function run(): void
     {
         // 1. Créer des utilisateurs
-        $users = User::factory()->count(5)->create();
+        $users = User::factory()->count(10)->create();
 
         // 2. Créer une conversation privée entre 2 utilisateurs
         $privateChat = Chat::create([

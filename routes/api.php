@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +12,7 @@ use App\Http\Controllers\CandidacyController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\ExperienceController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
@@ -30,8 +31,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
 
-
-    Route::get('/chats', [ChatController::class, 'index']);
+    
+     Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
 
     Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
@@ -40,12 +41,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::apiResource('portfolios', PortfolioController::class);
     Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
-
+     Route::apiResource('experiences', ExperienceController::class);
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
     Route::delete('/notification/{id}/destroy', [NotificationController::class, 'destroy']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
     Route::post('/mark-as-read/notification', [NotificationController::class, 'markAllAsRead']);
+
+     Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
+    Route::post('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
+    Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
+    Route::get('/users/{user}/following', [FollowController::class, 'following']);
+    Route::get('/users/{user}/is-following', [FollowController::class, 'isFollowing']);
+    Route::get('/users/{user}/follow-counts', [FollowController::class, 'followCounts']);
+
 });
 
 require __DIR__ . '/api-auth.php';
