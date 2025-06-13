@@ -48,12 +48,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
     Route::post('/mark-as-read/notification', [NotificationController::class, 'markAllAsRead']);
 
-     Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
+    Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
     Route::post('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
     Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
     Route::get('/users/{user}/following', [FollowController::class, 'following']);
     Route::get('/users/{user}/is-following', [FollowController::class, 'isFollowing']);
     Route::get('/users/{user}/follow-counts', [FollowController::class, 'followCounts']);
+
+    Route::get('/users/suggestions', [FollowController::class, 'suggestions']);
+
 
 });
 
