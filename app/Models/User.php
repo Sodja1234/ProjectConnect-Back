@@ -26,6 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'slug'
     ];
 
     /**
@@ -50,10 +51,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
-     public function skills(): BelongsToMany{
-         return $this->belongsToMany(Skill::class);
-     }
-     
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class);
+    }
+
 
     public function candidacies()
     {
@@ -67,8 +69,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     }
 
-     public function portfolios(): HasMany{
+    public function portfolios(): HasMany
+    {
         return $this->hasMany(Portfolio::class);
-     }
-   
+    }
+
 }
