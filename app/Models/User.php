@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -22,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'slug'
         'phone',
         'location',
         'job_title',
@@ -31,6 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
+     *
      * The attributes that should be hidden for serialization.
      *
      * @var array<int,string>
@@ -45,20 +48,20 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array<string,string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
-
-    public function skills(): BelongsToMany
+    protected function casts(): array
     {
-        return $this->belongsToMany(Skill::class);
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class);
-    }
+     public function skills(): BelongsToMany{
+         return $this->belongsToMany(Skill::class);
+     }
+     public function users(): BelongsToMany{
+        return $this->belongsToMany(user::class);
+     }
+ 
 
     public function candidacies()
     {
@@ -70,14 +73,17 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(ProjectRole::class, 'candidacies')
             ->withPivot('is_validated')->withTimestamps();
     }
-
-    public function following()
-    {
+    public function following(){
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
+    }
+
+    public function portfolios(): HasMany
+    {
+        return $this->hasMany(Portfolio::class);
     }
 
     public function followers()
     {
-        return $this->belongsToMany(User::class, 'followers', 'following_id', 'follower_id');
+        return $this->belongsToMany(User::class, 'followers', 'following_id', 'followers_id');
     }
 }
