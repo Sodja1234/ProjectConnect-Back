@@ -12,6 +12,7 @@ use App\Http\Controllers\CandidacyController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\ExperienceController;
 
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
@@ -31,31 +32,38 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
 
-    
-     Route::get('/chats', [ChatController::class, 'index']);
+    // ----------------------ROUTES POUR MESSAGERIE -----------------------------------------//
+    Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
-
     Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     Route::post('/messages', [MessageController::class, 'store']);
+    //-------------------------------------------------------------------------------------//
 
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::apiResource('portfolios', PortfolioController::class);
     Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
-     Route::apiResource('experiences', ExperienceController::class);
+    Route::apiResource('experiences', ExperienceController::class);
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
     Route::delete('/notification/{id}/destroy', [NotificationController::class, 'destroy']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
     Route::post('/mark-as-read/notification', [NotificationController::class, 'markAllAsRead']);
 
+    // ----------------------ROUTES POUR FOLLOWERS -------------------------------------------//
     Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
     Route::post('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
     Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
     Route::get('/users/{user}/following', [FollowController::class, 'following']);
     Route::get('/users/{user}/is-following', [FollowController::class, 'isFollowing']);
     Route::get('/users/{user}/follow-counts', [FollowController::class, 'followCounts']);
+    //-----------------------------------------------------------------------------------------//
 
+    // ----------------------ROUTES POUR SUGGESTIONS -------------------------------------------//
     Route::get('/users/suggestions', [FollowController::class, 'suggestions']);
+
+
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
 
 });
