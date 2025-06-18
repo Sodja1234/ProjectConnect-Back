@@ -7,7 +7,7 @@ use App\Events\RegisteredUserEvent;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class RegisteredUserListener implements ShouldQueue
+class RegisteredUserListener
 {
     /**
      * Create the event listener.
@@ -21,6 +21,6 @@ class RegisteredUserListener implements ShouldQueue
      */
     public function handle(RegisteredUserEvent $event): void
     {
-        $this->mailer->send(new RegisteredUserMail($event->user));
+        $this->mailer->send(new RegisteredUserMail($event->user,$event->token));
     }
 }
