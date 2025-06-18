@@ -9,7 +9,8 @@ class Candidacy extends Model
     protected $fillable = [
         'project_role_id',
         'user_id',
-        'is_validated'
+        'is_validated',
+        'status'
     ];
 
     public function projectRole()
