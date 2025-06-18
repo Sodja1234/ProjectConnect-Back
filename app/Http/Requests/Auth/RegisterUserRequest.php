@@ -28,6 +28,7 @@ class RegisterUserRequest extends BaseFormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'token' => ['nullable', 'string'],
         ];
     }
 }
