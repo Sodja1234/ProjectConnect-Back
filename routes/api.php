@@ -25,13 +25,16 @@ Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
 
 
+
+
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
+    Route::middleware('auth:sanctum')->post('/project-roles/{id}/invite', [CandidacyController::class, 'invite']);
 
-    
+
      Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
 
