@@ -23,7 +23,7 @@ Route::apiResource('projects', ProjectController::class)->only(["index", "show"]
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
-
+Route::get('users/projects',[ProjectController::class,'myproject']);
 
 
 
