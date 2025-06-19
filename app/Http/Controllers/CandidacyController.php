@@ -128,22 +128,23 @@ class CandidacyController extends Controller
     }
     public function invite(Request $request, $projectRoleId)
     {
+        $token = Str::random(60);
         $request->validate([
             'email' => 'required|email',
         ]);
 
         $projectRole = ProjectRole::with('project', 'role')->findOrFail($projectRoleId);
-        $mail =$request->email;
+        $mail = $request->email;
 
-
+        // Vérification des droits d'accès
         if ($projectRole->project->created_by !== auth()->user()->id) {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
         $existingUser = User::where('email', $request->email)->first();
 
+        // Vérification d'une éventuelle candidature ou invitation existante
         if ($existingUser) {
-            // Déjà inscrit → Créer une candidature validée
             $already = Candidacy::where('user_id', $existingUser->id)
                 ->where('project_role_id', $projectRoleId)
                 ->exists();
@@ -151,28 +152,29 @@ class CandidacyController extends Controller
             if ($already) {
                 return response()->json(['message' => 'Utilisateur déjà candidat ou invité.'], 422);
             }
+        }
 
+        // Création de l'invitation (unique pour les deux cas)
+        $invitation = Invitation::create([
+            'email' => $request->email,
+            'project_role_id' => $projectRoleId,
+            'token' => $token,
+            'status' => 'pending',
+        ]);
+
+        if ($existingUser) {
+            // Si l'utilisateur existe, créer une candidature et envoyer une notification
             $candidacy = Candidacy::create([
                 'user_id' => $existingUser->id,
                 'project_role_id' => $projectRoleId,
-                'is_validated' => true,
-                'status' => 'Invité',
+                'is_validated' => false,
+                'status' => 'Invité en attente',
             ]);
 
             $existingUser->notify(new JobApplicationNotification($candidacy, $projectRole));
         } else {
-
-            $token = Str::random(60);
-
-
-            Invitation::create([
-                'email' => $request->email,
-                'project_role_id' => $projectRoleId,
-                'token' => $token,
-
-            ]);
-
-            Mail::to($request->email)->send(new ProjectInvitationMail($mail, $projectRole,$token));
+            // Si l'utilisateur n'existe pas, envoyer un email d'invitation
+            Mail::to($request->email)->send(new ProjectInvitationMail($mail, $projectRole, $token));
         }
 
         return response()->json(['message' => 'Invitation envoyée avec succès.']);
