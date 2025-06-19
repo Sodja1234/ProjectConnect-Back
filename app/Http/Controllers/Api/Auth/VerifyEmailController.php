@@ -48,7 +48,8 @@ class VerifyEmailController extends Controller
 
             ]);
 
-            $invitation->delete();
+            // Mettre à jour le statut de l'invitation
+            $invitation->update(['status' => 'accepted']);
         }
 
         return $this->getAuthUser($user);
