@@ -110,6 +110,7 @@ class CandidacyController extends Controller
             $candidacy = Candidacy::create([
                 'user_id' => $user->id,
                 'project_role_id' => $projectRole->id,
+                'status' => 'En attente',
             ]);
 
             $user->notify(new JobApplicationNotification($candidacy, $projectRole));
@@ -122,7 +123,7 @@ class CandidacyController extends Controller
         } catch (\Throwable $e) {
             Log::error('Erreur Candidacy store: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Une erreur est survenue.',
+                'message' => 'Une erreur est survenue.'.' '.$e->getMessage(),
             ], 500);
         }
     }
