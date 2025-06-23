@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -33,7 +34,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
+    Route::get('/invitations/candidacies', [InvitationController::class, 'index']);
+    Route::post('/invitations/candidacies/{id}', [InvitationController::class, 'validate']);
     Route::middleware('auth:sanctum')->post('/project-roles/{id}/invite', [CandidacyController::class, 'invite']);
+
 
 
     Route::get('/chats', [ChatController::class, 'index']);

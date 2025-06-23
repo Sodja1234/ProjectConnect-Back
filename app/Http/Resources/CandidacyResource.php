@@ -21,6 +21,7 @@ class CandidacyResource extends JsonResource
             'id' => $this->id,
             'is_validated' => $this->is_validated,
             'created_at' => $this->created_at,
+            'status' => $this->status,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
