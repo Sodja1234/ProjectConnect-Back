@@ -1,5 +1,7 @@
 <?php
+
 use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +26,8 @@ Route::apiResource('projects', ProjectController::class)->only(["index", "show"]
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
+Route::get('users/projects', [ProjectController::class, 'myproject']);
+
 
 
 // ------------------- ROUTES PROTÉGÉES ------------------- //
@@ -31,8 +35,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
+    Route::get('/invitations/candidacies', [InvitationController::class, 'index']);
+    Route::post('/invitations/candidacies/{id}', [InvitationController::class, 'validate']);
+    Route::middleware('auth:sanctum')->post('/project-roles/{id}/invite', [CandidacyController::class, 'invite']);
 
-    // ----------------------ROUTES POUR MESSAGERIE -----------------------------------------//
+
+
     Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
     Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
@@ -49,7 +57,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/last-notification', [NotificationController::class, 'lastNotification']);
     Route::post('/mark-as-read/notification', [NotificationController::class, 'markAllAsRead']);
 
-    // ----------------------ROUTES POUR FOLLOWERS -------------------------------------------//
     Route::post('/users/{user}/follow', [FollowController::class, 'follow']);
     Route::post('/users/{user}/unfollow', [FollowController::class, 'unfollow']);
     Route::get('/users/{user}/followers', [FollowController::class, 'followers']);

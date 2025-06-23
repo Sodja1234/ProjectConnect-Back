@@ -279,5 +279,14 @@ class ProjectController extends Controller
             ], 500);
         }
     }
+      public function myproject()
+    {
+       
+        $project = User::with([
+         'candidacies', 'candidacies.projectRole.project'])->findOrFail(1);
 
+        $project = $project->candidacies->pluck('projectRole')->pluck('project')->unique();
+         
+        return ProjectResource::collection($project);
+    }
 }
