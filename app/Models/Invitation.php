@@ -15,6 +15,7 @@ class Invitation extends Model
         'project_role_id',
         'token',
          'status',
+        'created_by'
 
     ];
 
