@@ -21,6 +21,8 @@ class ProjectRolesResource extends JsonResource
 
             'role' => new RoleResource($this->whenLoaded('role')),
             'skills' => SkillsResource::collection($this->whenLoaded('skills')),
+            'candidacies_count' => $this->candidacies()->where('is_validated', true)->count(),
+            'invitations_count' => $this->invitations()->where('status', 'pending')->count(),
         ];
     }
 }
