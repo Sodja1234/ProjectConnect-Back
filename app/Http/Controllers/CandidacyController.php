@@ -170,6 +170,7 @@ class CandidacyController extends Controller
             'project_role_id' => $projectRoleId,
             'token' => $token,
             'status' => 'pending',
+            'created_by' => auth()->user()->id,
         ]);
 
         if ($existingUser) {
