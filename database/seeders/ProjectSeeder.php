@@ -66,7 +66,7 @@ class ProjectSeeder extends Seeder
         ];
 
         // Créer 10 projets
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 20; $i++) {
             $user = $users->random();
 
             $dateStart = Carbon::now()->addDays(rand(-30, 30));

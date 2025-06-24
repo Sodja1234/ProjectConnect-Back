@@ -25,7 +25,7 @@ use App\Models\User;
 
 class ProjectController extends Controller
 {
-   
+
     public function index(Request $request)
     {
         $search = $request->query('search');
@@ -41,11 +41,15 @@ class ProjectController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
-                    ->orWhere('description', 'like', "%$search%");
+                    ->orWhere('description', 'like', "%$search%")
+                    ->orWhereHas('domains', function ($q) use ($search) {
+                        $q->where('name', 'like', "%$search%");
+                    });
             });
         }
 
-        $projects = $query->paginate($perPage);
+        
+        $projects = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return ProjectResource::collection($projects);
     }
