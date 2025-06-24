@@ -39,4 +39,7 @@ class ProjectRole extends Model
             ->withPivot('is_validated')->withTimestamps();
 
     }
+    public function invitations(){
+        return $this->hasMany(Invitation::class);
+    }
 }
