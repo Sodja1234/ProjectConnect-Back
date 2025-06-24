@@ -38,38 +38,45 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        // Commencez la requête en filtrant par le project_id
-        $query = Candidacy::whereHas('projectRole', function($q) use ($projectId) {
+        // Requête principale filtrée
+        $query = Candidacy::whereHas('projectRole', function ($q) use ($projectId) {
             $q->where('project_id', $projectId);
         });
 
-        // Filtre par nom de rôle
         if ($request->has('role_name')) {
-            $query->whereHas('projectRole.role', function($q) use ($request) {
+            $query->whereHas('projectRole.role', function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->role_name . '%');
             });
         }
 
-        // Filtre par nom d'utilisateur
         if ($request->has('user_name')) {
-            $query->whereHas('user', function($q) use ($request) {
+            $query->whereHas('user', function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->user_name . '%');
             });
         }
 
-        // Filtre par statut de validation
         if ($request->has('is_validated') && in_array($request->is_validated, [0, 1])) {
             $query->where('is_validated', $request->is_validated);
         }
 
-        // Chargement des relations
-        $query->with(['projectRole' => function($q) {
-            $q->with('role');
-        }, 'user']);
+        $query->with(['projectRole.role', 'user']);
 
         // Pagination
         $perPage = $request->per_page ?? 10;
         $candidacies = $query->paginate($perPage);
+
+        // Total par rôle
+        $roleCounts = Candidacy::whereHas('projectRole', function ($q) use ($projectId) {
+            $q->where('project_id', $projectId);
+        })
+            ->with('projectRole.role')
+            ->get()
+            ->groupBy(function ($candidacy) {
+                return $candidacy->projectRole->role->name ?? 'Unknown';
+            })
+            ->map(function ($group) {
+                return count($group);
+            });
 
         return response()->json([
             "data" => CandidacyResource::collection($candidacies),
@@ -78,9 +85,11 @@ class CandidacyController extends Controller
                 "last_page" => $candidacies->lastPage(),
                 "per_page" => $candidacies->perPage(),
                 "total" => $candidacies->total(),
-            ]
+            ],
+            "totals_by_role" => $roleCounts
         ]);
     }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -206,4 +215,57 @@ class CandidacyController extends Controller
     {
         //
     }
+    /**
+     * Validate a candidacy (only project owner can do this)
+     */
+    public function validateCandidacy(Request $request, $candidacyId)
+    {
+
+        $validator =Validator::make($request->all(),[
+            'status'=>'required|in:accepted,declined'
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json(["error"=>$validator->errors()], 422);
+        }
+        try {
+            $user = auth()->user();
+
+            $candidacy = Candidacy::with(['projectRole.project'])->findOrFail($candidacyId);
+
+            // Vérifier que l'utilisateur est bien le créateur du projet
+            if ($candidacy->projectRole->project->created_by !== $user->id) {
+                return response()->json(['message' => 'Seul le propriétaire du projet peut valider cette candidature'], 403);
+            }
+
+            // Valider la candidature
+            if ($request->status === 'accepted') {
+                $candidacy->update([
+                    'is_validated' => true,
+                    'status' => 'Accepté',
+                ]);
+            } elseif ($request->status === 'declined') {
+                $candidacy->update([
+                    'is_validated' => false,
+                    'status' => 'Refusé',
+                ]);
+            }
+
+            // Notifier l'utilisateur dont la candidature a été validée
+            $candidacy->user->notify(new JobApplicationNotification($candidacy, $candidacy->projectRole));
+
+            return response()->json([
+                'message' => 'Candidature traitée avec succès',
+                'data' => new CandidacyResource($candidacy)
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('Erreur lors de la validation de la candidature: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la validation de la candidature'
+            ], 500);
+        }
+    }
+
+
 }

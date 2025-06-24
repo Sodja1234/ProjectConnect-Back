@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('invitations', function (Blueprint $table) {
             $table->enum('status', ['pending', 'accepted', 'declined'])
                 ->default('pending')
-                ->change();
+            ;
         });
     }
 
