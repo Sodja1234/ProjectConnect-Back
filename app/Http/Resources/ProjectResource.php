@@ -43,6 +43,13 @@ class ProjectResource extends JsonResource
             // Relations chargées (assure-toi qu'elles soient "with()" dans le contrôleur)
             'domains' => DomainResource::collection($this->whenLoaded('domains')),
             'project_roles_skills' => ProjectRolesResource::collection($this->whenLoaded('projectRoles')),
+            'total_candidacies_count' => $this->projectRoles->sum(function ($roleSkill) {
+                return $roleSkill->candidacies()->where('is_validated', true)->count();
+            }),
+            'total_pending_invitations' => $this->projectRoles->sum(function ($roleSkill) {
+                     return $roleSkill->invitations()->where('status', 'pending')->count();
+                }),
+
         ];
     }
 }
