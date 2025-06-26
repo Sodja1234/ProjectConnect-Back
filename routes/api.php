@@ -39,6 +39,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/invitations/candidacies', [InvitationController::class, 'index']);
     Route::post('/invitations/candidacies/{id}', [InvitationController::class, 'validate']);
     Route::post('/project-roles/{id}/invite', [CandidacyController::class, 'invite']);
+    Route::get('/projects/{id}/pending-invitations', [CandidacyController::class, 'pendingInvitations']);
 
     //valider ou rejeter la candidature (proprietaire du projet)
     Route::put('/candidacies/{id}/validate', [CandidacyController::class, 'validateCandidacy']);
