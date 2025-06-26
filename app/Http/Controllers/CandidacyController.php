@@ -185,7 +185,8 @@ class CandidacyController extends Controller
             $existingUser->notify(new JobApplicationNotification($candidacy, $projectRole));
         } else {
             // Si l'utilisateur n'existe pas, envoyer un email d'invitation
-            Mail::to($request->email)->send(new ProjectInvitationMail($mail, $projectRole, $token));
+            Mail::to($mail)->send(new ProjectInvitationMail($mail, $projectRole, $token));
+
         }
 
         return response()->json(['message' => 'Invitation envoyée avec succès.']);
@@ -267,6 +268,35 @@ class CandidacyController extends Controller
             ], 500);
         }
     }
+
+    public function pendingInvitations($projectId, Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Authentification requise'], 401);
+        }
+
+        // Vérifie que le projet existe et que l'utilisateur est le propriétaire
+        $project =Project::find($projectId);
+        if (!$project) {
+            return response()->json(['message' => 'Projet non trouvé'], 404);
+        }
+        if ($project->created_by !== $user->id) {
+            return response()->json(['message' => 'Accès refusé : vous n\'êtes pas le propriétaire du projet'], 403);
+        }
+
+        // Récupère toutes les invitations en attente pour ce projet
+        $pendingInvitations = Invitation::whereHas('projectRole', function ($q) use ($projectId) {
+            $q->where('project_id', $projectId);
+        })
+            ->where('status', 'pending')
+            ->get();
+
+        return response()->json(['data' => $pendingInvitations]);
+    }
+
+
 
 
 }
