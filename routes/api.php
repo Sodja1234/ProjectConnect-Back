@@ -25,12 +25,14 @@ Route::apiResource('projects', ProjectController::class)->only(["index", "show"]
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
-Route::get('users/projects', [ProjectController::class, 'myproject']);
+
 
 
 
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('users/projects', [ProjectController::class, 'myproject']);
+    Route::get('users/projects/participed', [ProjectController::class, 'participedproject']);
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
