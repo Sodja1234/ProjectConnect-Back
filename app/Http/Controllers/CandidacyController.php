@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\CandidacyResource;
+use App\Http\Resources\InvitationResource;
 use App\Mail\ProjectInvitationMail;
 use App\Models\Candidacy;
 use App\Models\Invitation;
@@ -277,24 +278,61 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Authentification requise'], 401);
         }
 
-        // Vérifie que le projet existe et que l'utilisateur est le propriétaire
-        $project =Project::find($projectId);
+        // Vérifie que le projet existe et appartient à l'utilisateur
+        $project = Project::find($projectId);
         if (!$project) {
             return response()->json(['message' => 'Projet non trouvé'], 404);
         }
+
         if ($project->created_by !== $user->id) {
             return response()->json(['message' => 'Accès refusé : vous n\'êtes pas le propriétaire du projet'], 403);
         }
 
-        // Récupère toutes les invitations en attente pour ce projet
-        $pendingInvitations = Invitation::whereHas('projectRole', function ($q) use ($projectId) {
-            $q->where('project_id', $projectId);
-        })
-            ->where('status', 'pending')
-            ->get();
+        // Filtres
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+        $email = $request->input('email');
+        $roleName = $request->input('role');
 
-        return response()->json(['data' => $pendingInvitations]);
+        // Requête filtrée
+        $pendingInvitations = Invitation::where('status', 'pending')
+            ->whereHas('projectRole', function ($q) use ($projectId, $roleName, $search) {
+                $q->where('project_id', $projectId);
+
+                // Filtrage par rôle (précis)
+                if ($roleName) {
+                    $q->whereHas('role', function ($r) use ($roleName) {
+                        $r->where('name', 'LIKE', "%$roleName%");
+                    });
+                }
+
+                // Recherche globale sur nom de rôle
+                if ($search) {
+                    $q->whereHas('role', function ($r) use ($search) {
+                        $r->where('name', 'LIKE', "%$search%");
+                    });
+                }
+            })
+            // Filtrage spécifique par email
+            ->when($email, function ($query) use ($email) {
+                $query->where('email', 'LIKE', "%$email%");
+            })
+            // Recherche globale sur email OU nom de rôle
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('email', 'LIKE', "%$search%")
+                        ->orWhereHas('projectRole.role', function ($r) use ($search) {
+                            $r->where('name', 'LIKE', "%$search%");
+                        });
+                });
+            })
+            ->with(['projectRole.role'])
+            ->paginate($perPage);
+
+        return InvitationResource::collection($pendingInvitations);
     }
+
+
 
 
 
