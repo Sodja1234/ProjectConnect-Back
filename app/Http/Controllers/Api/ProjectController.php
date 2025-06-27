@@ -299,16 +299,18 @@ class ProjectController extends Controller
     }
 
 
-    public function myproject()
-    {
+  public function myproject()
+{
+    $user = auth()->user();
 
-        $user = auth()->user();
-
-        if (!$user) {
-            return response()->json(["error" => "vous n'êtes pas connecté"], 401);
-        }
-        $projects = Project::where('created_by', $user->id)->get();
-
-        return ProjectResource::collection($projects);
+    if (!$user) {
+        return response()->json(["error" => "vous n'êtes pas connecté"], 401);
     }
+
+    // Pagination avec 6 projets par page
+    $projects = Project::where('created_by', $user->id)->paginate(6);
+
+    return ProjectResource::collection($projects);
+}
+
 }
