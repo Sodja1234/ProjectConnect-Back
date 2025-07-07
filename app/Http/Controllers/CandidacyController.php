@@ -278,7 +278,6 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Authentification requise'], 401);
         }
 
-        // Vérifie que le projet existe et appartient à l'utilisateur
         $project = Project::find($projectId);
         if (!$project) {
             return response()->json(['message' => 'Projet non trouvé'], 404);
@@ -288,49 +287,99 @@ class CandidacyController extends Controller
             return response()->json(['message' => 'Accès refusé : vous n\'êtes pas le propriétaire du projet'], 403);
         }
 
-        // Filtres
-        $perPage = $request->input('per_page', 10);
-        $search = $request->input('search');
-        $email = $request->input('email');
-        $roleName = $request->input('role');
-
-        // Requête filtrée
-        $pendingInvitations = Invitation::where('status', 'pending')
-            ->whereHas('projectRole', function ($q) use ($projectId, $roleName, $search) {
+        // Requête principale filtrée
+        $query = Invitation::where('status', 'pending')
+            ->whereHas('projectRole', function ($q) use ($projectId) {
                 $q->where('project_id', $projectId);
+            });
 
-                // Filtrage par rôle (précis)
-                if ($roleName) {
-                    $q->whereHas('role', function ($r) use ($roleName) {
-                        $r->where('name', 'LIKE', "%$roleName%");
+        // Filtres spécifiques
+        if ($request->has('email')) {
+            $query->where('email', 'like', '%' . $request->email . '%');
+        }
+
+        if ($request->has('role')) {
+            $query->whereHas('projectRole.role', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->role . '%');
+            });
+        }
+
+        // Recherche globale
+        if ($request->has('search')) {
+            $query->where(function ($subQuery) use ($request) {
+                $subQuery->where('email', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('projectRole.role', function ($r) use ($request) {
+                        $r->where('name', 'like', '%' . $request->search . '%');
                     });
-                }
+            });
+        }
 
-                // Recherche globale sur nom de rôle
-                if ($search) {
-                    $q->whereHas('role', function ($r) use ($search) {
-                        $r->where('name', 'LIKE', "%$search%");
-                    });
-                }
-            })
-            // Filtrage spécifique par email
-            ->when($email, function ($query) use ($email) {
-                $query->where('email', 'LIKE', "%$email%");
-            })
-            // Recherche globale sur email OU nom de rôle
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($subQuery) use ($search) {
-                    $subQuery->where('email', 'LIKE', "%$search%")
-                        ->orWhereHas('projectRole.role', function ($r) use ($search) {
-                            $r->where('name', 'LIKE', "%$search%");
-                        });
-                });
-            })
-            ->with(['projectRole.role'])
-            ->paginate($perPage);
+        $query->with(['projectRole.role']);
 
-        return InvitationResource::collection($pendingInvitations);
+        // Pagination
+        $perPage = $request->per_page ?? 10;
+        $invitations = $query->paginate($perPage);
+
+        // Total par rôle
+        $roleCounts = Invitation::where('status', 'pending')
+            ->whereHas('projectRole', function ($q) use ($projectId) {
+                $q->where('project_id', $projectId);
+            })
+            ->with('projectRole.role')
+            ->get()
+            ->groupBy(function ($invitation) {
+                return $invitation->projectRole->role->name ?? 'Unknown';
+            })
+            ->map(function ($group) {
+                return count($group);
+            });
+
+        return response()->json([
+            "data" => InvitationResource::collection($invitations),
+            "meta" => [
+                "current_page" => $invitations->currentPage(),
+                "last_page" => $invitations->lastPage(),
+                "per_page" => $invitations->perPage(),
+                "total" => $invitations->total(),
+            ],
+            "totals_by_role" => $roleCounts
+        ]);
     }
+
+
+
+    public function cancelInvitation($invitationId, Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json(['message' => 'Authentification requise'], 401);
+            }
+
+            $invitation = Invitation::with('projectRole.project')->findOrFail($invitationId);
+
+            // Vérifie que l'utilisateur est bien le propriétaire du projet
+            if ($invitation->projectRole->project->created_by !== $user->id) {
+                return response()->json(['message' => 'Seul le propriétaire du projet peut annuler cette invitation'], 403);
+            }
+
+            // Vérifie que l'invitation est encore en attente
+            if ($invitation->status !== 'pending') {
+                return response()->json(['message' => 'Seules les invitations en attente peuvent être annulées'], 422);
+            }
+
+            $invitation->delete();
+
+            return response()->json(['message' => 'Invitation annulée avec succès.']);
+
+        } catch (\Throwable $e) {
+
+            return response()->json(['message' => 'Une erreur est survenue.'.$e->getMessage()], 500);
+        }
+    }
+
+
 
 
 
