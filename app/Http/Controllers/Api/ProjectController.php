@@ -88,6 +88,7 @@ class ProjectController extends Controller
                 'date_end' => $request->date_end,
                 'budget' => $request->budget,
                 'location' => $request->location,
+                'status_id' => 1,// En cours par defaut
                 'visibility' => $request->visibility,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
