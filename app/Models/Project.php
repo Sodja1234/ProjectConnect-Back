@@ -20,7 +20,8 @@ class Project extends Model
         'location',
         'visibility',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'status_id'
     ];
 
 
@@ -32,7 +33,7 @@ class Project extends Model
 {
     return $this->belongsToMany(Role::class, 'project_role')
                 ->withPivot('description');
-              
+
 }
 
     public function domains(){
@@ -42,5 +43,9 @@ class Project extends Model
 {
     return $this->hasMany(ProjectRole::class);
 }
-    
+public function status()
+{
+    return $this->belongsTo(Status::class);
+}
+
 }
