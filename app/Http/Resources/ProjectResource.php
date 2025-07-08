@@ -28,6 +28,8 @@ class ProjectResource extends JsonResource
 
             'budget' => $this->budget,
             'location' => $this->location,
+            'status' => $this->status,
+
 
             // Si tu veux toujours garder "visibility" tel quel :
             'visibility' => $this->visibility,
