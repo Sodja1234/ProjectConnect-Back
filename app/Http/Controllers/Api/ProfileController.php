@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -9,7 +10,14 @@ use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller
 {
-    public function show()
+    public function show(User $user)
+    {
+        return response()->json([
+            'user' => $user
+        ]);
+    }
+
+    public function myProfile()
     {
         $user = Auth::user();
 
