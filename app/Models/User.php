@@ -23,13 +23,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'slug'
         'phone',
         'location',
         'job_title',
         'portfolio_url',
         'availability',
         'profile_photo',
+        'slug'
     ];
 
     /**
@@ -86,4 +86,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(User::class, 'followers', 'following_id', 'followers_id');
     }
+
+    public function interests()
+    {
+        return $this->belongsToMany(Interest::class);
+    }
+
 }
