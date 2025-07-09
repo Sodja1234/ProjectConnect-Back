@@ -12,26 +12,31 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int,string>
      */
     protected $fillable = [
         'name',
         'email',
         'password',
         'slug'
+        'phone',
+        'location',
+        'job_title',
+        'portfolio_url',
+        'availability',
+        'profile_photo',
     ];
 
     /**
      *
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int,string>
      */
     protected $hidden = [
         'password',
@@ -39,9 +44,9 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string,string>
      */
     protected function casts(): array
     {
@@ -50,11 +55,13 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
-    public function skills(): BelongsToMany
-    {
-        return $this->belongsToMany(Skill::class);
-    }
-
+     public function skills(): BelongsToMany{
+         return $this->belongsToMany(Skill::class);
+     }
+     public function users(): BelongsToMany{
+        return $this->belongsToMany(user::class);
+     }
+ 
 
     public function candidacies()
     {
@@ -65,10 +72,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(ProjectRole::class, 'candidacies')
             ->withPivot('is_validated')->withTimestamps();
-
     }
-    public function following()
-    {
+    public function following(){
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'following_id');
     }
 

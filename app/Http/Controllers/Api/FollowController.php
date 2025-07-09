@@ -79,4 +79,30 @@ class FollowController extends Controller
             'following_count' => $followingCount,
         ]);
     }
+
+    public function suggestions(): JsonResponse
+    {
+        $user = Auth::user();
+
+        // IDs des utilisateurs déjà suivis + le sien
+        $excludedIds = $user->following()->pluck('users.id')->toArray();
+        $excludedIds[] = $user->id;
+
+        // Récupère les intérêts de l'utilisateur connecté
+        $interestIds = $user->interests()->pluck('interests.id');
+
+        // Trouve d'autres utilisateurs qui partagent ces intérêts
+        $suggestions = User::whereNotIn('id', $excludedIds)
+            ->whereHas('interests', function ($query) use ($interestIds) {
+                $query->whereIn('interests.id', $interestIds);
+            })
+            ->with('interests')
+            ->inRandomOrder()
+            ->limit(5)
+            ->get();
+
+        return response()->json(UserResource::collection($suggestions));
+    }
+
+
 }
