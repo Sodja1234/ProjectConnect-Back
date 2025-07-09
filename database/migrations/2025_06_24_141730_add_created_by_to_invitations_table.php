@@ -6,19 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('invitations', function (Blueprint $table) {
-            $table->enum('status', ['pending', 'accepted', 'declined'])
-                ->default('pending')
-            ;
+            $table->foreignId("created_by")->constrained("users")->onDelete("cascade");
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('invitations', function (Blueprint $table) {
-            $table->dropColumn('status');
+            $table->dropColumn("created_by");
         });
     }
 };

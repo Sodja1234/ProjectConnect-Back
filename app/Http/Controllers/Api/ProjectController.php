@@ -25,7 +25,7 @@ use App\Models\User;
 
 class ProjectController extends Controller
 {
-   
+
     public function index(Request $request)
     {
         $search = $request->query('search');
@@ -41,11 +41,15 @@ class ProjectController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
-                    ->orWhere('description', 'like', "%$search%");
+                    ->orWhere('description', 'like', "%$search%")
+                    ->orWhereHas('domains', function ($q) use ($search) {
+                        $q->where('name', 'like', "%$search%");
+                    });
             });
         }
 
-        $projects = $query->paginate($perPage);
+
+        $projects = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return ProjectResource::collection($projects);
     }
@@ -70,7 +74,7 @@ class ProjectController extends Controller
         ]);
 
         $user = $request->user();
-       
+
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -84,6 +88,7 @@ class ProjectController extends Controller
                 'date_end' => $request->date_end,
                 'budget' => $request->budget,
                 'location' => $request->location,
+                'status_id' => 1,// En cours par defaut
                 'visibility' => $request->visibility,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
@@ -121,7 +126,6 @@ class ProjectController extends Controller
                 'message' => 'Projet créé avec succès.',
                 'data' => $project->load('domains', 'roles'),
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la création du projet',
@@ -232,7 +236,6 @@ class ProjectController extends Controller
                 'message' => 'Projet mis à jour avec succès.',
                 'data' => $project->load('domains', 'projectRoles.role', 'projectRoles.skills'),
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la mise à jour du projet',
@@ -271,7 +274,6 @@ class ProjectController extends Controller
             $project->delete();
 
             return response()->json(['message' => 'Projet supprimé avec succès.']);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la suppression du projet',
@@ -279,14 +281,35 @@ class ProjectController extends Controller
             ], 500);
         }
     }
-      public function myproject()
+    public function participedproject()
     {
-       
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(["error" => "vous n'êtes pas connecté"], 401);
+        }
+
         $project = User::with([
-         'candidacies', 'candidacies.projectRole.project'])->findOrFail(1);
+            'candidacies',
+            'candidacies.projectRole.project'
+        ])->findOrFail($user->id);
 
         $project = $project->candidacies->pluck('projectRole')->pluck('project')->unique();
-         
+
         return ProjectResource::collection($project);
+    }
+
+
+    public function myproject()
+    {
+
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(["error" => "vous n'êtes pas connecté"], 401);
+        }
+        $projects = Project::where('created_by', $user->id)->get();
+
+        return ProjectResource::collection($projects);
     }
 }

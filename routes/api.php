@@ -26,18 +26,26 @@ Route::apiResource('projects', ProjectController::class)->only(["index", "show"]
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
-Route::get('users/projects', [ProjectController::class, 'myproject']);
+
 
 
 
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('users/projects', [ProjectController::class, 'myproject']);
+    Route::get('users/projects/participed', [ProjectController::class, 'participedproject']);
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
     Route::get('/invitations/candidacies', [InvitationController::class, 'index']);
     Route::post('/invitations/candidacies/{id}', [InvitationController::class, 'validate']);
-    Route::middleware('auth:sanctum')->post('/project-roles/{id}/invite', [CandidacyController::class, 'invite']);
+    Route::post('/project-roles/{id}/invite', [CandidacyController::class, 'invite']);
+    Route::get('/projects/{id}/pending-invitations', [CandidacyController::class, 'pendingInvitations']);
+    Route::delete('/invitations/{invitationId}/cancel', [CandidacyController::class, 'cancelInvitation']);
+
+
+    //valider ou rejeter la candidature (proprietaire du projet)
+    Route::put('/candidacies/{id}/validate', [CandidacyController::class, 'validateCandidacy']);
 
 
 

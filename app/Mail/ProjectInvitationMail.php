@@ -18,14 +18,22 @@ class ProjectInvitationMail extends Mailable
     public string $email;
     public string $token;
     public $projectRole;
+    public string $invitationUrl;
 
     public function __construct(string $email, $projectRole,$token)
     {
         $this->email = $email;
         $this->projectRole = $projectRole;
         $this->token = $token;
+        $this->invitationUrl = config('app.frontend_url') . '/register?email=' . urlencode($email) . '&token=' . $token;
     }
-
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'invitation',
+            to: [$this->email]
+        );
+    }
 
     public function content(): Content
     {
@@ -35,6 +43,7 @@ class ProjectInvitationMail extends Mailable
                 'email' => $this->email,
                 'projectRole' => $this->projectRole,
                 'token' => $this->token,
+                'invitationUrl' => $this->invitationUrl,
             ]
         );
     }
