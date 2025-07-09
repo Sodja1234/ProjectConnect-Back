@@ -77,7 +77,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/users/suggestions', [FollowController::class, 'suggestions']);
 
 
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile', [ProfileController::class, 'myProfile'])->name('profile.me');
+    Route::get('/profiles/{user}', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
 
