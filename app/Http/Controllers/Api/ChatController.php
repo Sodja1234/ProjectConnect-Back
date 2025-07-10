@@ -20,16 +20,41 @@ class ChatController extends Controller
 
     public function store(Request $request)
     {
-        // Valider formulaire
+        if ($request->has('user_id')) {
+            $otherUserId = $request->user_id;
+            $currentUserId = Auth::id();
+
+            if ($otherUserId == $currentUserId) {
+                return response()->json(['error' => 'Impossible de créer un chat avec soi-même.'], 422);
+            }
+
+            $chat = Chat::where('type', 'private')
+                ->whereHas('users', function ($query) use ($currentUserId, $otherUserId) {
+                    $query->whereIn('user_id', [$currentUserId, $otherUserId]);
+                }, '=', 2)
+                ->first();
+
+            if ($chat) {
+                return response()->json($chat->load('users'));
+            }
+
+            $newChat = Chat::create([
+                'type' => 'private',
+            ]);
+
+            $newChat->users()->attach([$currentUserId, $otherUserId]);
+
+            return response()->json($newChat->load('users'));
+        }
+
         $request->validate([
             'type' => 'required|in:private,group',
-            'user_ids'=>'required|array|min:1',
-            'user_ids.*'=>'exists:users,id',
-            'name'=>'nullable|string'
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+            'name' => 'nullable|string'
         ]);
 
-        if (count(array_unique($request->user_ids)) === 1 && $request->user_ids[0] == Auth::id()) 
-        {
+        if (count(array_unique($request->user_ids)) === 1 && $request->user_ids[0] == Auth::id()) {
             return response()->json(['error' => 'Impossible de créer un chat avec soi-même uniquement.'], 422);
         }
 
