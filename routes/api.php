@@ -22,7 +22,7 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::get('/register', [Controller::class, 'register']);
-Route::apiResource('projects', ProjectController::class)->only(["index", "show"]);
+Route::apiResource('projects', ProjectController::class)->only(["index", "show"])->parameters(['projects' => 'slug']);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('domains', DomainController::class);
 Route::apiResource('skills', SkillController::class);
@@ -34,7 +34,7 @@ Route::apiResource('skills', SkillController::class);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('users/projects', [ProjectController::class, 'myproject']);
     Route::get('users/projects/participed', [ProjectController::class, 'participedproject']);
-    Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
+    Route::apiResource('projects', ProjectController::class)->except(["index", "show"])->parameters(['projects' => 'slug']);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
     Route::get('/invitations/candidacies', [InvitationController::class, 'index']);
