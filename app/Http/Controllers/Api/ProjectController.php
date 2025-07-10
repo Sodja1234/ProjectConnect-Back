@@ -88,7 +88,7 @@ class ProjectController extends Controller
                 'date_end' => $request->date_end,
                 'budget' => $request->budget,
                 'location' => $request->location,
-                'status_id' => 1,// En cours par defaut
+                'status_id' => 1, // En cours par defaut
                 'visibility' => $request->visibility,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
@@ -300,18 +300,17 @@ class ProjectController extends Controller
     }
 
 
-  public function myproject()
-{
-    $user = auth()->user();
+    public function myproject()
+    {
+        $user = auth()->user();
 
-    if (!$user) {
-        return response()->json(["error" => "vous n'êtes pas connecté"], 401);
+        if (!$user) {
+            return response()->json(["error" => "vous n'êtes pas connecté"], 401);
+        }
+
+        // Pagination avec 6 projets par page
+        $projects = Project::where('created_by', $user->id)->paginate(2);
+
+        return ProjectResource::collection($projects);
     }
-
-    // Pagination avec 6 projets par page
-    $projects = Project::where('created_by', $user->id)->paginate(6);
-
-    return ProjectResource::collection($projects);
-}
-
 }
