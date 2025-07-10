@@ -13,6 +13,8 @@ use App\Models\ProjectRole;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProjectResource;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+
 
 
 
@@ -83,6 +85,7 @@ class ProjectController extends Controller
         try {
             $project = Project::create([
                 'title' => $request->title,
+                'slug' => Str::slug($request->title),
                 'description' => $request->description,
                 'date_start' => $request->date_start,
                 'date_end' => $request->date_end,
@@ -135,9 +138,11 @@ class ProjectController extends Controller
     }
 
     // Détail d'un projet avec relations
-    public function show($id)
+    public function show($slug)
     {
-        $project = Project::with(['domains', 'projectRoles', 'projectRoles.skills', 'projectRoles.role', 'user'])->find($id);
+        $project = Project::with(['domains', 'projectRoles', 'projectRoles.skills', 'projectRoles.role', 'user'])
+            ->where('slug', $slug)
+            ->first();
 
         if (!$project) {
             return response()->json(['error' => 'Projet non trouvé'], 404);
@@ -148,12 +153,12 @@ class ProjectController extends Controller
 
 
     // Mise à jour du projet et relations
-    public function update(Request $request, $id)
+    public function update(Request $request, $slug)
     {
 
         $user = auth()->user();
 
-        $project = Project::find($id);
+        $project = Project::where('slug', $slug)->first();
 
         if (!$project) {
             return response()->json(['error' => 'Projet non trouvé'], 404);
@@ -187,15 +192,17 @@ class ProjectController extends Controller
 
         try {
             // Mise à jour simple des champs du projet
-            $project->update($request->only([
-                'title',
-                'description',
-                'date_start',
-                'date_end',
-                'budget',
-                'location',
-                'visibility'
-            ]));
+            $project->update([
+                'title' => $request->title,
+                'slug' => Str::slug($request->title),
+                'description' => $request->description,
+                'date_start' => $request->date_start,
+                'date_end' => $request->date_end,
+                'budget' => $request->budget,
+                'location' => $request->location,
+                'visibility' => $request->visibility,
+                'updated_by' => $user->id
+            ]);
 
             // Mettre à jour les domaines si fournis
             if ($request->has('domains')) {
@@ -244,12 +251,12 @@ class ProjectController extends Controller
         }
     }
     // Suppression d'un projet avec relations pivot
-    public function destroy($id)
+    public function destroy($slug)
     {
 
         $user = auth()->user();
 
-        $project = Project::find($id);
+        $project = Project::where('slug', $slug)->first();
         if ($user->id !== $project->created_by) {
             return response()->json([
                 'error' => 'Unauthorized'
