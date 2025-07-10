@@ -11,6 +11,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ProjectSeeder extends Seeder
 {
@@ -230,6 +231,7 @@ class ProjectSeeder extends Seeder
 
             $project = Project::create([
                 "title" => $projectData["title"],
+                'slug' => Str::slug($projectData["title"]),
                 "description" => $projectData["description"],
                 "date_start" => $startDate,
                 "date_end" => $endDate,
