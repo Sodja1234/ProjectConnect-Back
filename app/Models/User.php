@@ -26,10 +26,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'location',
         'job_title',
+        'role',
         'portfolio_url',
         'availability',
         'profile_photo',
-        'slug'
+        'slug',
+        'email_otp',
+        'email_otp_expires_at',
     ];
 
     /**
@@ -61,7 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail
      public function users(): BelongsToMany{
         return $this->belongsToMany(user::class);
      }
- 
+
 
     public function candidacies()
     {
