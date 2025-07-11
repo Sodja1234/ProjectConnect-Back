@@ -24,6 +24,7 @@ class RegisterController extends Controller
             'name' => $name,
             'email' => $request->validated('email'),
             'password' => Hash::make($request->validated('password')),
+            'role'=>$request->role??'user',
         ]);
 
         $user->update([
@@ -31,7 +32,7 @@ class RegisterController extends Controller
         ]);
 
 
-        event(new RegisteredUserEvent($user, $token));
+        event(new RegisteredUserEvent($user, $token,$user->otp));
 
         return response()->json([
             'status' => HttpResponse::HTTP_CREATED,

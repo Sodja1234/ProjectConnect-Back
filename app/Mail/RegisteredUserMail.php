@@ -14,10 +14,19 @@ class RegisteredUserMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $otp;
+
     public function __construct(
         public User $user,
-       public $token
-    ) {}
+        public ?string $token = null,
+    ) {
+        $this->otp = (string)rand(100000, 999999);
+        $this->user->update([
+            'email_otp' => $this->otp,
+            'email_otp_expires_at' => now()->addMinutes(10),
+        ]);
+    }
+
 
     public function envelope(): Envelope
     {
@@ -36,7 +45,8 @@ class RegisteredUserMail extends Mailable
             with: [
                 'user' => $this->user,
                 'url' => $url,
-                'token' => $this->token
+                'token' => $this->token,
+                'otp' => $this->otp
             ]
         );
     }
