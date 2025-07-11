@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Auth\OtpVerifyEmailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\RegisterController;
@@ -15,3 +16,5 @@ Route::post('/reset-password', NewPasswordController::class);
 Route::post('/verify-email/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['throttle:6,1'])
     ->name('verification.verify');
+
+Route::post('/verify-otp',[OtpVerifyEmailController::class,'verify'])->middleware(['throttle:6,1'])->name('otp.verify');
