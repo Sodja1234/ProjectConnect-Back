@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AdminController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\NotificationController;
@@ -82,6 +83,13 @@ Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
 
+    // ----------------------ROUTES POUR ADMINISTRATION -------------------------------------------//
+    Route::get('/users', [AdminController::class, 'index']);
+
+
+
 });
+
+
 
 require __DIR__ . '/api-auth.php';
