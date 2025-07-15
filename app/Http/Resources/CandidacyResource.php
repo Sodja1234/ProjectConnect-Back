@@ -6,6 +6,19 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @OA\Schema(
+ *     schema="CandidacyResource",
+ *     type="object",
+ *     title="Candidacy Resource",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="is_validated", type="boolean", example=false),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="status", type="string", example="pending"),
+ *     @OA\Property(property="user", ref="#/components/schemas/User"),
+ *     @OA\Property(property="project_role", ref="#/components/schemas/ProjectRole")
+ * )
+ */
 class CandidacyResource extends JsonResource
 {
     /**

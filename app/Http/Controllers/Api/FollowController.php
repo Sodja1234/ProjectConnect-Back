@@ -15,6 +15,33 @@ class FollowController extends Controller
     //     $this->middleware('auth:sanctum');
     // }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users/{user}/follow",
+     *     summary="Follow a user",
+     *     tags={"Follow"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="user",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user to follow",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User followed successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="You cannot follow yourself"
+     *     ),
+     *     @OA\Response(
+     *         response=409,
+     *         description="You are already following this user"
+     *     )
+     * )
+     */
     public function follow(User $user): JsonResponse
     {
         $follower = Auth::user();
@@ -35,6 +62,29 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/users/{user}/unfollow",
+     *     summary="Unfollow a user",
+     *     tags={"Follow"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="user",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user to unfollow",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User unfollowed successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="You are not following this user"
+     *     )
+     * )
+     */
     public function unfollow(User $user): JsonResponse
     {
         $follower = Auth::user();
@@ -51,16 +101,76 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/{user}/followers",
+     *     summary="Get a user's followers",
+     *     tags={"Follow"},
+     *     @OA\Parameter(
+     *         name="user",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/User"))
+     *     )
+     * )
+     */
     public function followers(User $user): JsonResponse
     {
         return response()->json(UserResource::collection($user->followers));
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/{user}/following",
+     *     summary="Get users a user is following",
+     *     tags={"Follow"},
+     *     @OA\Parameter(
+     *         name="user",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/User"))
+     *     )
+     * )
+     */
     public function following(User $user): JsonResponse
     {
         return response()->json(UserResource::collection($user->following));
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/{user}/is-following",
+     *     summary="Check if the current user is following another user",
+     *     tags={"Follow"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="user",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user to check",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="is_following", type="boolean")
+     *         )
+     *     )
+     * )
+     */
     public function isFollowing(User $user): JsonResponse
     {
         $follower = Auth::user();
@@ -69,6 +179,28 @@ class FollowController extends Controller
         return response()->json(['is_following' => $isFollowing]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/{user}/follow-counts",
+     *     summary="Get follower and following counts for a user",
+     *     tags={"Follow"},
+     *     @OA\Parameter(
+     *         name="user",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the user",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="followers_count", type="integer"),
+     *             @OA\Property(property="following_count", type="integer")
+     *         )
+     *     )
+     * )
+     */
     public function followCounts(User $user): JsonResponse
     {
         $followersCount = $user->followers()->count();
@@ -80,6 +212,19 @@ class FollowController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/suggestions",
+     *     summary="Get user suggestions for the current user",
+     *     tags={"Follow"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/User"))
+     *     )
+     * )
+     */
     public function suggestions(): JsonResponse
     {
         $user = Auth::user();
@@ -103,6 +248,4 @@ class FollowController extends Controller
 
         return response()->json(UserResource::collection($suggestions));
     }
-
-
 }

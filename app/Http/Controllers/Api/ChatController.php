@@ -5,19 +5,70 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Chat;
 use Illuminate\Http\Request;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class ChatController extends Controller
 {
-    public function index(){
+    /**
+     * @OA\Get(
+     *     path="/api/chats",
+     *     summary="Get the current user's chats",
+     *     tags={"Chat"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Chat")
+     *         )
+     *     )
+     * )
+     */
+    public function index()
+    {
         $chat = Chat::with(['users', 'lastMessage'])
-        ->whereHas('users', function ($query) {
-            $query->where('user_id', auth()->id());
-        })
-        ->get();
+            ->whereHas('users', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+            ->get();
         return response()->json($chat);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/chats",
+     *     summary="Create a new chat",
+     *     tags={"Chat"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Schema(
+     *                     required={"user_id"},
+     *                     @OA\Property(property="user_id", type="integer", description="ID of the other user for a private chat", example=2)
+     *                 ),
+     *                 @OA\Schema(
+     *                     required={"type", "user_ids"},
+     *                     @OA\Property(property="type", type="string", enum={"private", "group"}),
+     *                     @OA\Property(property="user_ids", type="array", @OA\Items(type="integer")),
+     *                     @OA\Property(property="name", type="string", description="Name of the group chat")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Chat created or retrieved successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Chat")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
     public function store(Request $request)
     {
         if ($request->has('user_id')) {

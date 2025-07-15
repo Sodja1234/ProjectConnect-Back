@@ -8,11 +8,25 @@ use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class ExperienceController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/experiences",
+     *     summary="Get the current user's experiences",
+     *     tags={"Experiences"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Experience")
+     *         )
+     *     )
+     * )
      */
     public  function index(Request $request)
     {
@@ -38,6 +52,27 @@ class ExperienceController extends Controller
      */
 
     //  methode pour cree une experience
+    /**
+     * @OA\Post(
+     *     path="/api/experiences",
+     *     summary="Create a new experience",
+     *     tags={"Experiences"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Experience")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Experience created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Experience")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
     public function store(Request $request)
     {
         try {
@@ -55,7 +90,7 @@ class ExperienceController extends Controller
 
             $validated = $validator->validated();
 
-            $user = auth()->user();
+            $user = Auth::user();
             if (!$user) {
                 return response()->json(['error' => 'Utilisateur non authentifié'], 401);
             }
@@ -81,9 +116,33 @@ class ExperienceController extends Controller
     /**
      * Display the specified resource.
      */
+    /**
+     * @OA\Get(
+     *     path="/api/experiences/{id}",
+     *     summary="Get a specific experience",
+     *     tags={"Experiences"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the experience",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(ref="#/components/schemas/Experience")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Experience not found"
+     *     )
+     * )
+     */
     public function show(string $id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         try {
             $experience = Experience::with(['user'])
@@ -99,6 +158,37 @@ class ExperienceController extends Controller
 
     /**
      * Show the form for editing the specified resource.
+     */
+    /**
+     * @OA\Put(
+     *     path="/api/experiences/{id}",
+     *     summary="Update an experience",
+     *     tags={"Experiences"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the experience",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Experience")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Experience updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Experience not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -131,6 +221,29 @@ class ExperienceController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     */
+    /**
+     * @OA\Delete(
+     *     path="/api/experiences/{id}",
+     *     summary="Delete an experience",
+     *     tags={"Experiences"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the experience",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Experience deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Experience not found"
+     *     )
+     * )
      */
     public function destroy(Request $request, string $id)
     {

@@ -12,7 +12,40 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InvitationController extends Controller
 {
-    //validation ou rejet de la candidature
+    /**
+     * @OA\Post(
+     *     path="/api/invitations/candidacies/{candidacyId}",
+     *     summary="Validate or decline an invitation",
+     *     tags={"Invitations"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="candidacyId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the candidacy to validate",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", enum={"accepted", "declined"})
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Invitation status updated successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="This candidacy does not come from a valid invitation"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Candidacy not found or already validated"
+     *     )
+     * )
+     */
     public function validate(Request $request, $candidacyId)
     {
         // Valider le champ status en se basant sur les enum autorisé
@@ -20,7 +53,7 @@ class InvitationController extends Controller
             'status' => 'required|in:pending,accepted,declined',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         // Récupérer la candidature non validée de l'utilisateur connecté
         $candidacy = Candidacy::where('id', $candidacyId)
@@ -69,9 +102,25 @@ class InvitationController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/invitations/candidacies",
+     *     summary="Get pending invitations for the current user",
+     *     tags={"Invitations"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Candidacy")
+     *         )
+     *     )
+     * )
+     */
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
 
         //Renvoyer uniquement les candidatures non validées venant des invitations en attente
@@ -87,11 +136,7 @@ class InvitationController extends Controller
             ->get();
 
         return response()->json([
-            'data' =>CandidacyResource::collection($candidacies),
+            'data' => CandidacyResource::collection($candidacies),
         ]);
     }
-
-
-
-
 }

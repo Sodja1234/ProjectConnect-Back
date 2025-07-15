@@ -16,11 +16,58 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class CandidacyController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/projects/{projectId}/candidacies",
+     *     summary="Get candidacies for a project",
+     *     tags={"Candidacies"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="projectId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the project",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="role_name",
+     *         in="query",
+     *         description="Filter by role name",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_name",
+     *         in="query",
+     *         description="Filter by user name",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="is_validated",
+     *         in="query",
+     *         description="Filter by validation status (0 or 1)",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Project not found"
+     *     )
+     * )
      */
     public function index($projectId, Request $request)
     {
@@ -92,7 +139,31 @@ class CandidacyController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/project-roles/{id}/apply",
+     *     summary="Apply for a project role",
+     *     tags={"Candidacies"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the project role",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Candidacy submitted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="You have already applied for this role in this project"
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
      */
     public function store(Request $request, $id)
     {
@@ -129,14 +200,47 @@ class CandidacyController extends Controller
                 'message' => 'Candidature soumise avec succès.',
                 'data' => $candidacy,
             ], 201);
-
         } catch (\Throwable $e) {
             Log::error('Erreur Candidacy store: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Une erreur est survenue.'.' '.$e->getMessage(),
+                'message' => 'Une erreur est survenue.' . ' ' . $e->getMessage(),
             ], 500);
         }
     }
+    /**
+     * @OA\Post(
+     *     path="/api/project-roles/{projectRoleId}/invite",
+     *     summary="Invite a user to a project role",
+     *     tags={"Candidacies"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="projectRoleId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the project role",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Invitation sent successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="User already a candidate or invited"
+     *     )
+     * )
+     */
     public function invite(Request $request, $projectRoleId)
     {
         $token = Str::random(60);
@@ -148,7 +252,7 @@ class CandidacyController extends Controller
         $mail = $request->email;
 
         // Vérification des droits d'accès
-        if ($projectRole->project->created_by !== auth()->user()->id) {
+        if ($projectRole->project->created_by !== Auth::user()->id) {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
@@ -171,7 +275,7 @@ class CandidacyController extends Controller
             'project_role_id' => $projectRoleId,
             'token' => $token,
             'status' => 'pending',
-            'created_by' => auth()->user()->id,
+            'created_by' => Auth::user()->id,
         ]);
 
         if ($existingUser) {
@@ -187,7 +291,6 @@ class CandidacyController extends Controller
         } else {
             // Si l'utilisateur n'existe pas, envoyer un email d'invitation
             Mail::to($mail)->send(new ProjectInvitationMail($mail, $projectRole, $token));
-
         }
 
         return response()->json(['message' => 'Invitation envoyée avec succès.']);
@@ -219,20 +322,51 @@ class CandidacyController extends Controller
         //
     }
     /**
-     * Validate a candidacy (only project owner can do this)
+     * @OA\Put(
+     *     path="/api/candidacies/{candidacyId}/validate",
+     *     summary="Validate or decline a candidacy",
+     *     tags={"Candidacies"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="candidacyId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the candidacy",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", enum={"accepted", "declined"})
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Candidacy processed successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function validateCandidacy(Request $request, $candidacyId)
     {
 
-        $validator =Validator::make($request->all(),[
-            'status'=>'required|in:accepted,declined'
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:accepted,declined'
 
         ]);
         if ($validator->fails()) {
-            return response()->json(["error"=>$validator->errors()], 422);
+            return response()->json(["error" => $validator->errors()], 422);
         }
         try {
-            $user = auth()->user();
+            $user = Auth::user();
 
             $candidacy = Candidacy::with(['projectRole.project'])->findOrFail($candidacyId);
 
@@ -261,7 +395,6 @@ class CandidacyController extends Controller
                 'message' => 'Candidature traitée avec succès',
                 'data' => new CandidacyResource($candidacy)
             ]);
-
         } catch (\Throwable $e) {
             Log::error('Erreur lors de la validation de la candidature: ' . $e->getMessage());
             return response()->json([
@@ -270,9 +403,46 @@ class CandidacyController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/projects/{projectId}/pending-invitations",
+     *     summary="Get pending invitations for a project",
+     *     tags={"Candidacies"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="projectId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the project",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="email",
+     *         in="query",
+     *         description="Filter by email",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="role",
+     *         in="query",
+     *         description="Filter by role name",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search by email or role name",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation"
+     *     )
+     * )
+     */
     public function pendingInvitations($projectId, Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user) {
             return response()->json(['message' => 'Authentification requise'], 401);
@@ -348,6 +518,37 @@ class CandidacyController extends Controller
 
 
 
+    /**
+     * @OA\Delete(
+     *     path="/api/invitations/{invitationId}/cancel",
+     *     summary="Cancel a pending invitation",
+     *     tags={"Candidacies"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="invitationId",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the invitation to cancel",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Invitation cancelled successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Only pending invitations can be cancelled"
+     *     )
+     * )
+     */
     public function cancelInvitation($invitationId, Request $request)
     {
         try {
@@ -372,18 +573,9 @@ class CandidacyController extends Controller
             $invitation->delete();
 
             return response()->json(['message' => 'Invitation annulée avec succès.']);
-
         } catch (\Throwable $e) {
 
-            return response()->json(['message' => 'Une erreur est survenue.'.$e->getMessage()], 500);
+            return response()->json(['message' => 'Une erreur est survenue.' . $e->getMessage()], 500);
         }
     }
-
-
-
-
-
-
-
-
 }
