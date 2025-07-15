@@ -9,7 +9,19 @@ use Illuminate\Support\Facades\Validator;
 class RoleController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/roles",
+     *     summary="Get a list of roles",
+     *     tags={"Roles"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Role")
+     *         )
+     *     )
+     * )
      */
     public function index()
     {
