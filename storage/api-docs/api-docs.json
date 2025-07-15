@@ -5,33 +5,855 @@
         "version": "1.0.0"
     },
     "paths": {
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Authenticate user and return a token",
+                "operationId": "53f69ba45e2d61208d41d3dedb0ada75",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "test@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResource"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invalid credentials"
+                    },
+                    "403": {
+                        "description": "Email not verified"
+                    }
+                }
+            }
+        },
         "/api/register": {
-            "get": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
                 "summary": "Register a new user",
-                "operationId": "912a50d49e122401e37c573a53e8e999",
+                "operationId": "4e188e11de3f10ac8c5a04bdb81e32b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    },
+                                    "token": {
+                                        "type": "string",
+                                        "example": "some-invitation-token"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/chats": {
+            "get": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Get the current user's chats",
+                "operationId": "1ad2bc436ab5a502ecfea4ebd92d5318",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Chat"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Create a new chat",
+                "operationId": "0713ae108f50452d4bdc0b7056c057f6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "required": [
+                                            "user_id"
+                                        ],
+                                        "properties": {
+                                            "user_id": {
+                                                "description": "ID of the other user for a private chat",
+                                                "type": "integer",
+                                                "example": 2
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    {
+                                        "required": [
+                                            "type",
+                                            "user_ids"
+                                        ],
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "private",
+                                                    "group"
+                                                ]
+                                            },
+                                            "user_ids": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "name": {
+                                                "description": "Name of the group chat",
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Chat created or retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Chat"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{user}/follow": {
+            "post": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Follow a user",
+                "operationId": "e1b5f4f44ccb8f56a7ee3caa376461af",
                 "parameters": [
                     {
-                        "name": "name",
-                        "in": "query",
-                        "description": "User's name",
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user to follow",
                         "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User followed successfully"
+                    },
+                    "403": {
+                        "description": "You cannot follow yourself"
+                    },
+                    "409": {
+                        "description": "You are already following this user"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{user}/unfollow": {
+            "post": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Unfollow a user",
+                "operationId": "cb5742fc9d7384825a79ee09120d8695",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user to unfollow",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User unfollowed successfully"
+                    },
+                    "404": {
+                        "description": "You are not following this user"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{user}/followers": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Get a user's followers",
+                "operationId": "1e4444d2ba3f2ed144b414d735608dd8",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/User"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{user}/following": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Get users a user is following",
+                "operationId": "2640a5fed728395709cb4b3a1e1b9785",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/User"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/{user}/is-following": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Check if the current user is following another user",
+                "operationId": "91e3250fe35f586c448518e7caee8bc1",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user to check",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "is_following": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{user}/follow-counts": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Get follower and following counts for a user",
+                "operationId": "f479c205c33e0c554e2400915534df2c",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "followers_count": {
+                                            "type": "integer"
+                                        },
+                                        "following_count": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/suggestions": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Get user suggestions for the current user",
+                "operationId": "995796b504853bd7ff6d388f5a3fefff",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/User"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/invitations/candidacies/{candidacyId}": {
+            "post": {
+                "tags": [
+                    "Invitations"
+                ],
+                "summary": "Validate or decline an invitation",
+                "operationId": "57c9dd68a5fbd279813e20efae760d50",
+                "parameters": [
+                    {
+                        "name": "candidacyId",
+                        "in": "path",
+                        "description": "ID of the candidacy to validate",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "accepted",
+                                            "declined"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Invitation status updated successfully"
+                    },
+                    "403": {
+                        "description": "This candidacy does not come from a valid invitation"
+                    },
+                    "404": {
+                        "description": "Candidacy not found or already validated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/invitations/candidacies": {
+            "get": {
+                "tags": [
+                    "Invitations"
+                ],
+                "summary": "Get pending invitations for the current user",
+                "operationId": "d6a0cc72ecfbb1f709c14bd3c507107d",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Candidacy"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/messages": {
+            "post": {
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send a message to a chat",
+                "operationId": "3382afb03cba75ab7a0600d750f70fcb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "chat_id",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "chat_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Hello, world!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Message sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Message"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/chats/{chatId}/messages": {
+            "get": {
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Get messages for a chat",
+                "operationId": "4f55fa24f067a681879b94244c4e44b7",
+                "parameters": [
+                    {
+                        "name": "chatId",
+                        "in": "path",
+                        "description": "ID of the chat",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Message"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/profiles/{user}": {
+            "get": {
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Get a user's profile",
+                "operationId": "1a9e5ad57ffda077c33684828c6106f8",
+                "parameters": [
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "ID of the user",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/profile": {
+            "get": {
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Get the current user's profile",
+                "operationId": "2bec84e25f3d0e2807b1e52914504e82",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Profiles"
+                ],
+                "summary": "Update the current user's profile",
+                "operationId": "df42d7bd8c9605adf2e62002661ca9f3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "job_title": {
+                                        "type": "string"
+                                    },
+                                    "location": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "portfolio_url": {
+                                        "type": "string",
+                                        "format": "url"
+                                    },
+                                    "availability": {
+                                        "type": "string"
+                                    },
+                                    "profile_photo": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "about": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/projects": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get a list of projects",
+                "operationId": "fbc21feeb3df8a2cb519efb6480ae7d9",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by title, description, or domain",
                         "schema": {
                             "type": "string"
                         }
-                    },
-                    {
-                        "name": "email",
-                        "in": "query",
-                        "description": "User's email",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Project"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Create a new project",
+                "operationId": "a9d5bd5914cf75eaebafcf8b9e320dcf",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Project"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Project created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Project"
+                                }
+                            }
                         }
                     },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
                     {
-                        "name": "password",
-                        "in": "query",
-                        "description": "User's password",
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/projects/{slug}": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get a specific project",
+                "operationId": "5e9c6547fc186698706ad93d707cb8cd",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug of the project",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -39,17 +861,1878 @@
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "User registered successfully"
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Project"
+                                }
+                            }
+                        }
                     },
-                    "422": {
-                        "description": "Validation errors"
+                    "404": {
+                        "description": "Project not found"
                     }
                 }
+            },
+            "put": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Update a project",
+                "operationId": "137bec7d97fa9711319802acf28c10ab",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug of the project",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Project"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Project updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Project"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Delete a project",
+                "operationId": "0f8465f5299b44e3d7e121ca9842c54f",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug of the project",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project deleted successfully"
+                    },
+                    "404": {
+                        "description": "Project not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/projects/participed": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get projects a user has participated in",
+                "operationId": "afe268093978259c660368524f8ac99c",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Project"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/projects": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get projects created by the current user",
+                "operationId": "920206feb4b524ee7328a4d97e2472cf",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Project"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/projects/{projectId}/candidacies": {
+            "get": {
+                "tags": [
+                    "Candidacies"
+                ],
+                "summary": "Get candidacies for a project",
+                "operationId": "0f85408567f94b89a9adc90d01dcffc2",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "description": "ID of the project",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "role_name",
+                        "in": "query",
+                        "description": "Filter by role name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user_name",
+                        "in": "query",
+                        "description": "Filter by user name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_validated",
+                        "in": "query",
+                        "description": "Filter by validation status (0 or 1)",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Project not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/project-roles/{id}/apply": {
+            "post": {
+                "tags": [
+                    "Candidacies"
+                ],
+                "summary": "Apply for a project role",
+                "operationId": "6466341ce6fe08c796accf4ba5e008f9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the project role",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Candidacy submitted successfully"
+                    },
+                    "422": {
+                        "description": "You have already applied for this role in this project"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/project-roles/{projectRoleId}/invite": {
+            "post": {
+                "tags": [
+                    "Candidacies"
+                ],
+                "summary": "Invite a user to a project role",
+                "operationId": "242043264bfdd4f1688cefbfea6a85ef",
+                "parameters": [
+                    {
+                        "name": "projectRoleId",
+                        "in": "path",
+                        "description": "ID of the project role",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Invitation sent successfully"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "User already a candidate or invited"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/candidacies/{candidacyId}/validate": {
+            "put": {
+                "tags": [
+                    "Candidacies"
+                ],
+                "summary": "Validate or decline a candidacy",
+                "operationId": "61323548a9f9a4e027cc500e2999ed1f",
+                "parameters": [
+                    {
+                        "name": "candidacyId",
+                        "in": "path",
+                        "description": "ID of the candidacy",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "accepted",
+                                            "declined"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Candidacy processed successfully"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/projects/{projectId}/pending-invitations": {
+            "get": {
+                "tags": [
+                    "Candidacies"
+                ],
+                "summary": "Get pending invitations for a project",
+                "operationId": "c5d2d1ad669b331e171552deb6fd07d7",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "description": "ID of the project",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Filter by email",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "Filter by role name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by email or role name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/invitations/{invitationId}/cancel": {
+            "delete": {
+                "tags": [
+                    "Candidacies"
+                ],
+                "summary": "Cancel a pending invitation",
+                "operationId": "8f849774606c4617bd8151c1d5339d5e",
+                "parameters": [
+                    {
+                        "name": "invitationId",
+                        "in": "path",
+                        "description": "ID of the invitation to cancel",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Invitation cancelled successfully"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Only pending invitations can be cancelled"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/domains": {
+            "get": {
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Get a list of domains",
+                "operationId": "8eead5cc470eaadf40aeb9f17367451f",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Domain"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Create a new domain",
+                "operationId": "9af6901cd3131bbe3b0e94a05bb42913",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Web Development"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Domain created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Domain"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/domains/{domain}": {
+            "get": {
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Get a specific domain",
+                "operationId": "2b2ed83054f0b84c086a498f29fd23b3",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "in": "path",
+                        "description": "ID of the domain",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Domain"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Update a domain",
+                "operationId": "045c235e3fe6c29c2ac5d19526df2739",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "in": "path",
+                        "description": "ID of the domain",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Web Development"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Domain updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Domain"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Domains"
+                ],
+                "summary": "Delete a domain",
+                "operationId": "29eb90f118deb87703d20074d43f1566",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "in": "path",
+                        "description": "ID of the domain",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Domain deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/experiences": {
+            "get": {
+                "tags": [
+                    "Experiences"
+                ],
+                "summary": "Get the current user's experiences",
+                "operationId": "9808e2b3304f0b4df63e0b33dc489031",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Experience"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Experiences"
+                ],
+                "summary": "Create a new experience",
+                "operationId": "67a3b55afd270cedd7c5b50d1e9d90a5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Experience"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Experience created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Experience"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/experiences/{id}": {
+            "get": {
+                "tags": [
+                    "Experiences"
+                ],
+                "summary": "Get a specific experience",
+                "operationId": "8b98e38a300e1c9b77c2c75cd7b8d145",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the experience",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Experience"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Experience not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Experiences"
+                ],
+                "summary": "Update an experience",
+                "operationId": "27d9d7cc25befc9ed6c83511d79e8056",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the experience",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Experience"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Experience updated successfully"
+                    },
+                    "404": {
+                        "description": "Experience not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Experiences"
+                ],
+                "summary": "Delete an experience",
+                "operationId": "5153774e4c35397dc6f7671511c0b643",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the experience",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Experience deleted successfully"
+                    },
+                    "404": {
+                        "description": "Experience not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/portfolios": {
+            "get": {
+                "tags": [
+                    "Portfolios"
+                ],
+                "summary": "Get list of portfolios",
+                "description": "Retrieve a list of portfolios, optionally filtered by user_id",
+                "operationId": "8566f1566fca0cecfcd1dafecd68ac8a",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "Filter portfolios by user ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with list of portfolios",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Portfolio"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Portfolios"
+                ],
+                "summary": "Create a new portfolio",
+                "operationId": "6bb68149a9fd6c3570620d8e517734fa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Portfolio"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Portfolio created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Portfolio"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/portfolios/{id}": {
+            "get": {
+                "tags": [
+                    "Portfolios"
+                ],
+                "summary": "Get a specific portfolio",
+                "operationId": "92d0b4593a161d6b3fff310a3a4d83f8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the portfolio",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Portfolio"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Portfolio not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Portfolios"
+                ],
+                "summary": "Delete a portfolio",
+                "operationId": "893d23fb3ad6b301399b333e869898be",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the portfolio",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Portfolio deleted successfully"
+                    },
+                    "404": {
+                        "description": "Portfolio not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/myPortfolio": {
+            "get": {
+                "tags": [
+                    "Portfolios"
+                ],
+                "summary": "Get the current user's portfolio",
+                "operationId": "b8dd4bb1dbee62325f248b2e7c1a154a",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Portfolio"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/roles": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Get a list of roles",
+                "operationId": "77e3636d8592997ce9d6d27b50857a69",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Role"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/skills": {
+            "get": {
+                "tags": [
+                    "Skills"
+                ],
+                "summary": "Get a list of skills",
+                "operationId": "6acb38b223d6471cc32eab45ea57be4b",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Skill"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Skills"
+                ],
+                "summary": "Create a new skill",
+                "operationId": "4725cd560d3046ae33bd690208e21d41",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "PHP"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Skill created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Skill"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/skills/{skill}": {
+            "get": {
+                "tags": [
+                    "Skills"
+                ],
+                "summary": "Get a specific skill",
+                "operationId": "c94d2cd9b0fdf86655414bb7017644c5",
+                "parameters": [
+                    {
+                        "name": "skill",
+                        "in": "path",
+                        "description": "ID of the skill",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Skill"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Skills"
+                ],
+                "summary": "Update a skill",
+                "operationId": "4de5c7e668ff9d810bde0cbb0e4bd408",
+                "parameters": [
+                    {
+                        "name": "skill",
+                        "in": "path",
+                        "description": "ID of the skill",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "PHP"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Skill updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Skill"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Skills"
+                ],
+                "summary": "Delete a skill",
+                "operationId": "81a0602c4a0824e6c6b702c36625db96",
+                "parameters": [
+                    {
+                        "name": "skill",
+                        "in": "path",
+                        "description": "ID of the skill",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Skill deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },
     "components": {
+        "schemas": {
+            "AuthResource": {
+                "title": "Auth Resource",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "john-doe-1"
+                    },
+                    "is_verified": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "token": {
+                        "type": "string",
+                        "example": "generated-auth-token"
+                    }
+                },
+                "type": "object"
+            },
+            "CandidacyResource": {
+                "title": "Candidacy Resource",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_validated": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    },
+                    "project_role": {
+                        "$ref": "#/components/schemas/ProjectRole"
+                    }
+                },
+                "type": "object"
+            },
+            "Notification": {
+                "required": [
+                    "id",
+                    "data",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique de la notification",
+                        "type": "string"
+                    },
+                    "data": {
+                        "description": "Données associées à la notification",
+                        "type": "object"
+                    },
+                    "read_at": {
+                        "description": "Date de lecture de la notification ou null si non lue",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Date de création de la notification (format relatif, ex : 'il y a 2 minutes')",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "Candidacy": {
+                "title": "Candidacy",
+                "description": "Candidacy model",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "project_role_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_validated": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    },
+                    "project_role": {
+                        "$ref": "#/components/schemas/ProjectRole"
+                    }
+                },
+                "type": "object"
+            },
+            "Chat": {
+                "title": "Chat",
+                "description": "Chat model",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "private",
+                            "group"
+                        ],
+                        "example": "private"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Group Chat Name"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "users": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/User"
+                        }
+                    },
+                    "last_message": {
+                        "$ref": "#/components/schemas/Message"
+                    }
+                },
+                "type": "object"
+            },
+            "Domain": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique du domaine",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "description": "Nom du domaine",
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "description": "Date de création du domaine",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière mise à jour du domaine",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Experience": {
+                "required": [
+                    "created_by",
+                    "position",
+                    "company",
+                    "date_start",
+                    "user_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique de l'expérience",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "created_by": {
+                        "description": "Identifiant de l'utilisateur ayant créé l'expérience",
+                        "type": "integer"
+                    },
+                    "position": {
+                        "description": "Poste occupé",
+                        "type": "string"
+                    },
+                    "company": {
+                        "description": "Nom de l'entreprise",
+                        "type": "string"
+                    },
+                    "date_start": {
+                        "description": "Date de début de l'expérience",
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "date_end": {
+                        "description": "Date de fin de l'expérience (peut être null si en cours)",
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "description": {
+                        "description": "Description de l'expérience",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "user_id": {
+                        "description": "Identifiant de l'utilisateur associé à cette expérience",
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "description": "Date de création de l'enregistrement",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière mise à jour de l'enregistrement",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Invitation": {
+                "title": "Invitation",
+                "description": "Invitation model",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "invited@example.com"
+                    },
+                    "project_role_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "token": {
+                        "type": "string",
+                        "example": "invitation-token"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "accepted",
+                            "declined"
+                        ],
+                        "example": "pending"
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Message": {
+                "required": [
+                    "chat_id",
+                    "sender_id",
+                    "message"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique du message",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "chat_id": {
+                        "description": "Identifiant du chat auquel appartient ce message",
+                        "type": "integer"
+                    },
+                    "sender_id": {
+                        "description": "Identifiant de l'utilisateur qui a envoyé le message",
+                        "type": "integer"
+                    },
+                    "message": {
+                        "description": "Contenu du message",
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "description": "Date de création du message",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière modification du message",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Portfolio": {
+                "required": [
+                    "name",
+                    "user_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique du portfolio",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "description": "Nom du portfolio",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Description du portfolio",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "link": {
+                        "description": "Lien vers le portfolio",
+                        "type": "string",
+                        "format": "url",
+                        "nullable": true
+                    },
+                    "user_id": {
+                        "description": "Identifiant de l'utilisateur propriétaire du portfolio",
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "description": "Date de création du portfolio",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière mise à jour du portfolio",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Project": {
+                "title": "Project",
+                "description": "Project model",
+                "required": [
+                    "title",
+                    "description",
+                    "date_start",
+                    "date_end"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID of the project",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "description": "Title of the project",
+                        "type": "string",
+                        "example": "New Awesome Project"
+                    },
+                    "slug": {
+                        "description": "Slug of the project",
+                        "type": "string",
+                        "example": "new-awesome-project"
+                    },
+                    "description": {
+                        "description": "Description of the project",
+                        "type": "string",
+                        "example": "This is a very awesome project."
+                    },
+                    "date_start": {
+                        "description": "Start date of the project",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-07-10"
+                    },
+                    "date_end": {
+                        "description": "End date of the project",
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-12-31"
+                    },
+                    "budget": {
+                        "description": "Budget of the project",
+                        "type": "number",
+                        "format": "float",
+                        "example": 5000.5
+                    },
+                    "location": {
+                        "description": "Location of the project",
+                        "type": "string",
+                        "example": "New York, USA"
+                    },
+                    "visibility": {
+                        "description": "Visibility of the project",
+                        "type": "string",
+                        "enum": [
+                            "public",
+                            "private"
+                        ],
+                        "example": "public"
+                    },
+                    "status_id": {
+                        "description": "Status ID of the project",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_by": {
+                        "description": "User ID of the creator",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "updated_by": {
+                        "description": "User ID of the last updater",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "description": "Creation date",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-07-10T17:32:41.000000Z"
+                    },
+                    "updated_at": {
+                        "description": "Last update date",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-07-10T17:32:41.000000Z"
+                    }
+                },
+                "type": "object"
+            },
+            "ProjectRole": {
+                "required": [
+                    "project_id",
+                    "role_id"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique du lien projet-rôle",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "project_id": {
+                        "description": "Identifiant du projet associé",
+                        "type": "integer"
+                    },
+                    "role_id": {
+                        "description": "Identifiant du rôle associé",
+                        "type": "integer"
+                    },
+                    "description": {
+                        "description": "Description spécifique du rôle dans le projet",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Date de création de l'enregistrement",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière mise à jour de l'enregistrement",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Role": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique du rôle",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "description": "Nom du rôle",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Description du rôle",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Date de création du rôle",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière mise à jour du rôle",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "Skill": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Identifiant unique de la compétence",
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "description": "Nom de la compétence",
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "description": "Date de création de la compétence",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    },
+                    "updated_at": {
+                        "description": "Date de dernière mise à jour de la compétence",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "title": "User",
+                "description": "User model",
+                "required": [
+                    "name",
+                    "email"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "ID of the user",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "Name of the user",
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "description": "Email of the user",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "phone": {
+                        "description": "Phone number of the user",
+                        "type": "string",
+                        "example": "+1234567890"
+                    },
+                    "location": {
+                        "description": "Location of the user",
+                        "type": "string",
+                        "example": "New York, USA"
+                    },
+                    "job_title": {
+                        "description": "Job title of the user",
+                        "type": "string",
+                        "example": "Software Engineer"
+                    },
+                    "portfolio_url": {
+                        "description": "Portfolio URL of the user",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://johndoe.com"
+                    },
+                    "availability": {
+                        "description": "Availability of the user",
+                        "type": "string",
+                        "example": "Full-time"
+                    },
+                    "profile_photo": {
+                        "description": "Profile photo URL of the user",
+                        "type": "string",
+                        "example": "https://example.com/photo.jpg"
+                    },
+                    "slug": {
+                        "description": "Slug of the user",
+                        "type": "string",
+                        "example": "john-doe-1"
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -57,5 +2740,59 @@
                 "scheme": "bearer"
             }
         }
-    }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Chat",
+            "description": "Chat"
+        },
+        {
+            "name": "Follow",
+            "description": "Follow"
+        },
+        {
+            "name": "Invitations",
+            "description": "Invitations"
+        },
+        {
+            "name": "Messages",
+            "description": "Messages"
+        },
+        {
+            "name": "Profiles",
+            "description": "Profiles"
+        },
+        {
+            "name": "Projects",
+            "description": "Projects"
+        },
+        {
+            "name": "Candidacies",
+            "description": "Candidacies"
+        },
+        {
+            "name": "Domains",
+            "description": "Domains"
+        },
+        {
+            "name": "Experiences",
+            "description": "Experiences"
+        },
+        {
+            "name": "Portfolios",
+            "description": "Portfolios"
+        },
+        {
+            "name": "Roles",
+            "description": "Roles"
+        },
+        {
+            "name": "Skills",
+            "description": "Skills"
+        }
+    ]
 }
