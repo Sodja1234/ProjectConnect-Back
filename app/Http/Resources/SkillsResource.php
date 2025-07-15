@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +17,7 @@ class SkillsResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-
+            'experience_percentage' => $this->pivot?->experience_percentage,
         ];
     }
 }
