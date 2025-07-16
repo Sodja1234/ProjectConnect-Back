@@ -85,6 +85,7 @@ Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
 
     // ----------------------ROUTES POUR ADMINISTRATION -------------------------------------------//
     Route::get('/users', [AdminController::class, 'index']);
+    Route::post('/users/{user}/state', [AdminController::class, 'toggleState']);
 
 
 
