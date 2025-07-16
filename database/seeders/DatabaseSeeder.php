@@ -36,8 +36,5 @@ class DatabaseSeeder extends Seeder
         $this->call(ProjectSeeder::class);
         $this->call(ChatSeeder::class);
         $this->call(InterestSeeder::class);
-
-
-
     }
 }

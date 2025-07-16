@@ -8,14 +8,37 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    private const FILTER_TARGET = ['all', 'unread'];
+
     public function index(Request $request)
     {
+        $filterBy = $request->query('filter', 'all');
+
+        if (!in_array($filterBy, self::FILTER_TARGET)) {
+            return response()->json([
+                'message' => 'Invalid filter parameter. Allowed values are: ' . implode(', ', self::FILTER_TARGET),
+            ], 400);
+        }
+
         $user = $request->user();
 
-        $notifications = $user->notifications()->paginate();
+        $query = $user->notifications();
 
-        return NotificationResource::collection($notifications);
+        if ($filterBy === 'unread') {
+            $query->whereNull('read_at');
+        }
+
+        $notifications = $query->latest()->paginate();
+
+        $counts = [
+            'all_notifications' => $user->notifications()->count(),
+            'unread_notifications' => $user->notifications()->whereNull('read_at')->count()
+        ];
+
+        return NotificationResource::collection($notifications)
+            ->additional(['counts' => $counts]);
     }
+
 
     public function lastNotification(Request $request)
     {
