@@ -34,7 +34,7 @@ Route::apiResource('skills', SkillController::class);
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('users/projects', [ProjectController::class, 'myproject']);
-    Route::get('users/projects/participed', [ProjectController::class, 'participedproject']);
+    Route::get('users_projects_participed', [ProjectController::class, 'participedproject']);
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"])->parameters(['projects' => 'slug']);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
