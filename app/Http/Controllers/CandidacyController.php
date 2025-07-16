@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\CandidacyResource;
 use App\Http\Resources\InvitationResource;
+use App\Jobs\NotifyApplicationSubmissionJob;
 use App\Mail\ProjectInvitationMail;
 use App\Models\Candidacy;
 use App\Models\Invitation;
 use App\Models\Project;
 use App\Models\ProjectRole;
 use App\Models\User;
+use App\Notifications\CandidacyStatusNotification;
 use App\Notifications\JobApplicationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -194,7 +196,7 @@ class CandidacyController extends Controller
                 'status' => 'En attente',
             ]);
 
-            $user->notify(new JobApplicationNotification($candidacy, $projectRole));
+            NotifyApplicationSubmissionJob::dispatch($candidacy, $projectRole);
 
             return response()->json([
                 'message' => 'Candidature soumise avec succès.',
@@ -381,15 +383,24 @@ class CandidacyController extends Controller
                     'is_validated' => true,
                     'status' => 'Accepté',
                 ]);
+                // Notifier l'utilisateur dont la candidature a été validée
+                $candidacy->user()->notify(new CandidacyStatusNotification(
+                    $candidacy,
+                    'accepted'
+                ));
+
             } elseif ($request->status === 'declined') {
                 $candidacy->update([
                     'is_validated' => false,
                     'status' => 'Refusé',
                 ]);
-            }
 
-            // Notifier l'utilisateur dont la candidature a été validée
-            $candidacy->user->notify(new JobApplicationNotification($candidacy, $candidacy->projectRole));
+                // Notifier l'utilisateur dont la candidature n'a pas été validée
+                $candidacy->user()->notify(new CandidacyStatusNotification(
+                    $candidacy,
+                    'rejected'
+                ));
+            }
 
             return response()->json([
                 'message' => 'Candidature traitée avec succès',

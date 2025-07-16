@@ -29,14 +29,14 @@ class JobApplicationNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $jobTitle = $this->projectRole->project->title ?? 'le poste';
-
+        $jobTitle = $this->projectRole->project->title ?? 'le projet';
+        $roleName = $this->projectRole->role->name ?? 'le rôle';
         $url = $this->getUrlDetails();
 
         return (new MailMessage)
-            ->subject("Votre candidature a été envoyée avec succès")
+            ->subject("Votre candidature au rôle « {$roleName} » a été envoyée")
             ->greeting("Bonjour {$notifiable->name},")
-            ->line("Nous confirmons que votre candidature pour le poste de **{$jobTitle}** a bien été envoyée.")
+            ->line("Nous confirmons que votre candidature pour le rôle **{$roleName}** sur le projet **{$jobTitle}** a bien été envoyée.")
             ->line("Nous étudierons votre profil avec attention et vous tiendrons informé(e) des prochaines étapes.")
             ->action('Voir votre candidature', $url)
             ->line("Merci de votre confiance et bonne chance !");
@@ -49,18 +49,19 @@ class JobApplicationNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
-        $jobTitle = $this->projectRole->project->title ?? 'le poste';
+        $jobTitle = $this->projectRole->project->title ?? 'le projet';
+        $roleName = $this->projectRole->role->name ?? 'le rôle';
 
         return [
             'candidacy_id' => $this->candidacy->id,
-            'title' => $jobTitle,
-            'message' => "Votre candidature pour le projet  \"{$jobTitle}\" a été envoyée avec succès.",
+            'title' => "Candidature au rôle « {$roleName} »",
+            'message' => "Votre candidature au rôle « {$roleName} » sur le projet \"{$jobTitle}\" a été envoyée avec succès.",
             'link' => $this->getUrlDetails(),
         ];
     }
 
-    private function getUrlDetails()
+    private function getUrlDetails(): string
     {
-        return url(config('app.frontend_url') . "/candidacy/{$this->candidacy->id}");
+        return url(config('app.frontend_url') . "/project/{$this->projectRole->project->slug}");
     }
 }
