@@ -34,7 +34,6 @@ Route::apiResource('skills', SkillController::class);
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('users/projects', [ProjectController::class, 'myproject']);
-    Route::get('skill_user', [SkillController::class, 'myskill']);
     Route::get('users/projects/participed', [ProjectController::class, 'participedproject']);
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"])->parameters(['projects' => 'slug']);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
@@ -53,14 +52,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
-    Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
+Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     Route::post('/messages', [MessageController::class, 'store']);
     //-------------------------------------------------------------------------------------//
 
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::apiResource('portfolios', PortfolioController::class);
-    Route::get('portfolios', [PortfolioController::class, 'index']);
-    Route::get('portfolios/{id}', [PortfolioController::class, 'show']);
     Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
     Route::apiResource('experiences', ExperienceController::class);
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
@@ -88,6 +85,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // ----------------------ROUTES POUR ADMINISTRATION -------------------------------------------//
     Route::get('/users', [AdminController::class, 'index']);
+    Route::post('/users/{user}/state', [AdminController::class, 'toggleState']);
+
+
+
 });
 
 
