@@ -7,11 +7,36 @@ use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Resources\PortfolioResource;
 use Database\Seeders\PortfolioSeeder;
+use Illuminate\Support\Facades\Auth;
 
 class PortfolioController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/portfolios",
+     *     summary="Get list of portfolios",
+     *     description="Retrieve a list of portfolios, optionally filtered by user_id",
+     *     tags={"Portfolios"},
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="query",
+     *         description="Filter portfolios by user ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with list of portfolios",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Portfolio")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request"
+     *     )
+     * )
      */
     public function index(Request $request)
     {
@@ -35,7 +60,25 @@ class PortfolioController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/portfolios",
+     *     summary="Create a new portfolio",
+     *     tags={"Portfolios"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Portfolio")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Portfolio created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Portfolio")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -47,7 +90,7 @@ class PortfolioController extends Controller
             'skill.*' => 'exists:skills,id',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         $portfolio = Portfolio::create(array_merge($request->all(), [
             'user_id' => $user->id
@@ -63,11 +106,36 @@ class PortfolioController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/portfolios/{id}",
+     *     summary="Get a specific portfolio",
+     *     tags={"Portfolios"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the portfolio",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(ref="#/components/schemas/Portfolio")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Portfolio not found"
+     *     )
+     * )
      */
     public function show(string $id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         try {
             $portfolio = Portfolio::with(['skills', 'user'])->findOrFail($id);
@@ -91,7 +159,27 @@ class PortfolioController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/portfolios/{id}",
+     *     summary="Delete a portfolio",
+     *     tags={"Portfolios"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the portfolio",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Portfolio deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Portfolio not found"
+     *     )
+     * )
      */
     public function destroy(string $id)
     {
@@ -102,15 +190,31 @@ class PortfolioController extends Controller
         return response()->json(['message' => 'Portfolio supprimé avec succès.']);
     }
 
-public function myPortfolio()
-{
-    $user = auth()->user();
+    /**
+     * @OA\Get(
+     *     path="/api/myPortfolio",
+     *     summary="Get the current user's portfolio",
+     *     tags={"Portfolios"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Portfolio")
+     *         )
+     *     )
+     * )
+     */
+    public function myPortfolio()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-    // Charge les relations sur les portfolios
-    $user->load('portfolios.skills', 'portfolios.user');
+        // Charge les relations sur les portfolios
+        $user->load('portfolios.skills', 'portfolios.user');
 
-    // Retourne une collection formatée grâce à PortfolioResource
-    return PortfolioResource::collection($user->portfolios);
-}
-
+        // Retourne une collection formatée grâce à PortfolioResource
+        return PortfolioResource::collection($user->portfolios);
+    }
 }
