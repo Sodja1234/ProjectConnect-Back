@@ -384,7 +384,7 @@ class CandidacyController extends Controller
                     'status' => 'Accepté',
                 ]);
                 // Notifier l'utilisateur dont la candidature a été validée
-                $candidacy->user()->notify(new CandidacyStatusNotification(
+                $candidacy->user->notify(new CandidacyStatusNotification(
                     $candidacy,
                     'accepted'
                 ));
@@ -396,7 +396,7 @@ class CandidacyController extends Controller
                 ]);
 
                 // Notifier l'utilisateur dont la candidature n'a pas été validée
-                $candidacy->user()->notify(new CandidacyStatusNotification(
+                $candidacy->user->notify(new CandidacyStatusNotification(
                     $candidacy,
                     'rejected'
                 ));
