@@ -384,7 +384,7 @@ class CandidacyController extends Controller
                     'status' => 'Accepté',
                 ]);
                 // Notifier l'utilisateur dont la candidature a été validée
-                $candidacy->user()->notify(new CandidacyStatusNotification(
+                $candidacy->user->notify(new CandidacyStatusNotification(
                     $candidacy,
                     'accepted'
                 ));
@@ -396,7 +396,7 @@ class CandidacyController extends Controller
                 ]);
 
                 // Notifier l'utilisateur dont la candidature n'a pas été validée
-                $candidacy->user()->notify(new CandidacyStatusNotification(
+                $candidacy->user->notify(new CandidacyStatusNotification(
                     $candidacy,
                     'rejected'
                 ));
@@ -409,7 +409,9 @@ class CandidacyController extends Controller
         } catch (\Throwable $e) {
             Log::error('Erreur lors de la validation de la candidature: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Une erreur est survenue lors de la validation de la candidature'
+                'message' => 'Une erreur est survenue lors de la validation de la candidature',
+                'trace' => $e->getTrace(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }
