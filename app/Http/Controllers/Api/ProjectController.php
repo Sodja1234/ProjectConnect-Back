@@ -13,6 +13,10 @@ use App\Models\ProjectRole;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProjectResource;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+
+
 
 
 
@@ -22,10 +26,29 @@ use App\Models\User;
 
 
 
-
 class ProjectController extends Controller
 {
-   
+    /**
+     * @OA\Get(
+     *     path="/api/projects",
+     *     summary="Get a list of projects",
+     *     tags={"Projects"},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search by title, description, or domain",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Project")
+     *         )
+     *     )
+     * )
+     */
     public function index(Request $request)
     {
         $search = $request->query('search');
@@ -41,15 +64,40 @@ class ProjectController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
-                    ->orWhere('description', 'like', "%$search%");
+                    ->orWhere('description', 'like', "%$search%")
+                    ->orWhereHas('domains', function ($q) use ($search) {
+                        $q->where('name', 'like', "%$search%");
+                    });
             });
         }
 
-        $projects = $query->paginate($perPage);
+
+        $projects = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return ProjectResource::collection($projects);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/projects",
+     *     summary="Create a new project",
+     *     tags={"Projects"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Project")
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Project created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Project")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -70,7 +118,7 @@ class ProjectController extends Controller
         ]);
 
         $user = $request->user();
-       
+
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
@@ -79,11 +127,13 @@ class ProjectController extends Controller
         try {
             $project = Project::create([
                 'title' => $request->title,
+                'slug' => Str::slug($request->title),
                 'description' => $request->description,
                 'date_start' => $request->date_start,
                 'date_end' => $request->date_end,
                 'budget' => $request->budget,
                 'location' => $request->location,
+                'status_id' => 1, // En cours par defaut
                 'visibility' => $request->visibility,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
@@ -121,7 +171,6 @@ class ProjectController extends Controller
                 'message' => 'Projet créé avec succès.',
                 'data' => $project->load('domains', 'roles'),
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la création du projet',
@@ -130,10 +179,34 @@ class ProjectController extends Controller
         }
     }
 
-    // Détail d'un projet avec relations
-    public function show($id)
+    /**
+     * @OA\Get(
+     *     path="/api/projects/{slug}",
+     *     summary="Get a specific project",
+     *     tags={"Projects"},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         required=true,
+     *         description="Slug of the project",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(ref="#/components/schemas/Project")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Project not found"
+     *     )
+     * )
+     */
+    public function show($slug)
     {
-        $project = Project::with(['domains', 'projectRoles', 'projectRoles.skills', 'projectRoles.role', 'user'])->find($id);
+        $project = Project::with(['domains', 'projectRoles', 'projectRoles.skills', 'projectRoles.role', 'user'])
+            ->where('slug', $slug)
+            ->first();
 
         if (!$project) {
             return response()->json(['error' => 'Projet non trouvé'], 404);
@@ -143,13 +216,44 @@ class ProjectController extends Controller
     }
 
 
-    // Mise à jour du projet et relations
-    public function update(Request $request, $id)
+    /**
+     * @OA\Put(
+     *     path="/api/projects/{slug}",
+     *     summary="Update a project",
+     *     tags={"Projects"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         required=true,
+     *         description="Slug of the project",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(ref="#/components/schemas/Project")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Project updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Project")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Project not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
+    public function update(Request $request, $slug)
     {
 
-        $user = auth()->user();
+        $user = Auth::user();
 
-        $project = Project::find($id);
+        $project = Project::where('slug', $slug)->first();
 
         if (!$project) {
             return response()->json(['error' => 'Projet non trouvé'], 404);
@@ -183,15 +287,17 @@ class ProjectController extends Controller
 
         try {
             // Mise à jour simple des champs du projet
-            $project->update($request->only([
-                'title',
-                'description',
-                'date_start',
-                'date_end',
-                'budget',
-                'location',
-                'visibility'
-            ]));
+            $project->update([
+                'title' => $request->title,
+                'slug' => Str::slug($request->title),
+                'description' => $request->description,
+                'date_start' => $request->date_start,
+                'date_end' => $request->date_end,
+                'budget' => $request->budget,
+                'location' => $request->location,
+                'visibility' => $request->visibility,
+                'updated_by' => $user->id
+            ]);
 
             // Mettre à jour les domaines si fournis
             if ($request->has('domains')) {
@@ -232,7 +338,6 @@ class ProjectController extends Controller
                 'message' => 'Projet mis à jour avec succès.',
                 'data' => $project->load('domains', 'projectRoles.role', 'projectRoles.skills'),
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la mise à jour du projet',
@@ -240,13 +345,35 @@ class ProjectController extends Controller
             ], 500);
         }
     }
-    // Suppression d'un projet avec relations pivot
-    public function destroy($id)
+    /**
+     * @OA\Delete(
+     *     path="/api/projects/{slug}",
+     *     summary="Delete a project",
+     *     tags={"Projects"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         required=true,
+     *         description="Slug of the project",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Project deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Project not found"
+     *     )
+     * )
+     */
+    public function destroy($slug)
     {
 
-        $user = auth()->user();
+        $user = Auth::user();
 
-        $project = Project::find($id);
+        $project = Project::where('slug', $slug)->first();
         if ($user->id !== $project->created_by) {
             return response()->json([
                 'error' => 'Unauthorized'
@@ -271,7 +398,6 @@ class ProjectController extends Controller
             $project->delete();
 
             return response()->json(['message' => 'Projet supprimé avec succès.']);
-
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la suppression du projet',
@@ -280,4 +406,76 @@ class ProjectController extends Controller
         }
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/users/projects/participed",
+     *     summary="Get projects a user has participated in",
+     *     tags={"Projects"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Project")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
+    public function participedproject()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(["error" => "vous n'êtes pas connecté"], 401);
+        }
+
+        $project = User::with([
+            'candidacies',
+            'candidacies.projectRole.project'
+        ])->findOrFail($user->id);
+
+        $project = $project->candidacies->pluck('projectRole')->pluck('project')->unique();
+
+        return ProjectResource::collection($project);
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/users/projects",
+     *     summary="Get projects created by the current user",
+     *     tags={"Projects"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Project")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
+    public function myproject()
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(["error" => "vous n'êtes pas connecté"], 401);
+        }
+
+        // Pagination avec 6 projets par page
+        $projects = Project::where('created_by', $user->id)->paginate(2);
+
+        return ProjectResource::collection($projects);
+    }
 }

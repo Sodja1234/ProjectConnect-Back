@@ -17,15 +17,25 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
+            'name' => 'admin',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'state' => 1
+        ]);
+        User::factory()->create([
             'name' => 'Test User',
             'email' => 'line@example.com',
             'password' => Hash::make('password'),
+
         ]);
         $this->call(DomainSeeder::class);
         $this->call(RoleSeeder::class);
+        $this->call(StatusSeeder::class);
         $this->call(SkillSeeder::class);
         $this->call(ProjectSeeder::class);
         $this->call(ChatSeeder::class);
+        $this->call(InterestSeeder::class);
 
 
 

@@ -14,30 +14,28 @@ class RegisteredUserMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     *
-     * @param User $user
-     */
-    public function __construct(public User $user)
-    {
+    public string $otp;
+
+    public function __construct(
+        public User $user,
+        public ?string $token = null,
+    ) {
+        $this->otp = (string)rand(100000, 999999);
+        $this->user->update([
+            'email_otp' => $this->otp,
+            'email_otp_expires_at' => now()->addMinutes(10),
+        ]);
     }
 
-    /**
-     * Get the message envelope.
-     */
+
     public function envelope(): Envelope
     {
         return new Envelope(
             subject: 'Activation de votre compte',
             to: [$this->user->email]
-
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         $url = $this->generateVerificationUrl();
@@ -47,15 +45,12 @@ class RegisteredUserMail extends Mailable
             with: [
                 'user' => $this->user,
                 'url' => $url,
+                'token' => $this->token,
+                'otp' => $this->otp
             ]
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];
@@ -65,7 +60,14 @@ class RegisteredUserMail extends Mailable
     {
         $userId = $this->user->id;
         $hash = sha1($this->user->email);
+        $token = $this->token;
 
+        // Si le token est null, on évite de l'ajouter
+        if ($this->token) {
+            return config('app.frontend_url') . "/verify-email/{$userId}/{$hash}/?token={$token}";
+        }
+
+        // URL alternative si aucun token n'est fourni
         return config('app.frontend_url') . "/verify-email/{$userId}/{$hash}";
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
-use Hash;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Events\RegisteredUserEvent;
 use App\Http\Controllers\Controller;
@@ -13,7 +13,32 @@ use Symfony\Component\HttpFoundation\Response;
 class AuthController extends Controller
 {
     /**
-     * Handle the incoming request.
+     * @OA\Post(
+     *     path="/api/login",
+     *     summary="Authenticate user and return a token",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="test@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Authentication successful",
+     *         @OA\JsonContent(ref="#/components/schemas/AuthResource")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Invalid credentials"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Email not verified"
+     *     )
+     * )
      */
     public function __invoke(LoginRequest $request)
     {
@@ -21,7 +46,7 @@ class AuthController extends Controller
         $email = $request->validated('email');
         $password = $request->validated('password');
 
-        $user = User::whereEmail($email)->first();
+        $user = User::where('email', $email)->first();
 
         if (!$user instanceof User || !Hash::check($password, $user->password)) {
             return response()->json([
