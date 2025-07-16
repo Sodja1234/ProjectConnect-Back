@@ -409,7 +409,9 @@ class CandidacyController extends Controller
         } catch (\Throwable $e) {
             Log::error('Erreur lors de la validation de la candidature: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Une erreur est survenue lors de la validation de la candidature'
+                'message' => 'Une erreur est survenue lors de la validation de la candidature',
+                'trace' => $e->getTrace(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }
