@@ -46,15 +46,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'phone',
-        'location',
-        'job_title',
         'role',
-        'portfolio_url',
-        'availability',
-        'profile_photo',
         'slug',
-        'about',
         'skill',
         'email_otp',
         'email_otp_expires_at',
@@ -124,5 +117,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function interests()
     {
         return $this->belongsToMany(Interest::class);
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
     }
 }
