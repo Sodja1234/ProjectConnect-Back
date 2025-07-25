@@ -161,5 +161,10 @@ class Project extends Model
     {
         return $this->belongsTo(Status::class);
     }
+    
+
+    public function candidacies() {
+        return $this->hasMany(Candidacy::class);
+    }
 
 }
