@@ -33,9 +33,11 @@ Route::apiResource('skills', SkillController::class);
 
 // ------------------- ROUTES PROTÉGÉES ------------------- //
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('experiences', ExperienceController::class);
+
     Route::get('users/projects', [ProjectController::class, 'myproject']);
-    Route::get('skill_user',[SkillController::class, 'myskill']);
-    Route::get('users_projects_participed', [ProjectController::class, 'participedproject']);
+    Route::get('skill/user', [SkillController::class, 'myskill']);
+    Route::get('users/projects/participed', [ProjectController::class, 'projectparticiped']);
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"])->parameters(['projects' => 'slug']);
     Route::post('/project-roles/{id}/apply', [CandidacyController::class, 'store']);
     Route::get('/projects/{id}/candidacies', [CandidacyController::class, 'index']);
@@ -53,14 +55,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
-Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
+    Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     Route::post('/messages', [MessageController::class, 'store']);
     //-------------------------------------------------------------------------------------//
 
     Route::apiResource('projects', ProjectController::class)->except(["index", "show"]);
     Route::apiResource('portfolios', PortfolioController::class);
-    Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio']);
-    Route::apiResource('experiences', ExperienceController::class);
+    Route::get('myPortfolio', [PortfolioController::class, 'myPortfolio'])->name('portfolio.me');
     Route::get('/notification/{id}', [NotificationController::class, 'show']);
     Route::delete('/notification/{id}/destroy', [NotificationController::class, 'destroy']);
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -87,9 +88,6 @@ Route::get('/chats/{chatId}/messages', [MessageController::class, 'index']);
     // ----------------------ROUTES POUR ADMINISTRATION -------------------------------------------//
     Route::get('/users', [AdminController::class, 'index']);
     Route::post('/users/{user}/state', [AdminController::class, 'toggleState']);
-
-
-
 });
 
 
