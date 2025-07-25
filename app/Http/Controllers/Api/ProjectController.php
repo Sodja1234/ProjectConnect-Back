@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\Domain;
 use App\Models\Project;
 use App\Models\ProjectRole;
+use App\Services\SearchableService;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProjectResource;
 use Illuminate\Support\Facades\Validator;
@@ -426,7 +427,7 @@ class ProjectController extends Controller
      *     )
      * )
      */
-    public function participedproject()
+    public function projectparticiped(SearchableService $searchableService)
     {
         $user = Auth::user();
 
@@ -434,14 +435,21 @@ class ProjectController extends Controller
             return response()->json(["error" => "vous n'êtes pas connecté"], 401);
         }
 
-        $project = User::with([
-            'candidacies',
-            'candidacies.projectRole.project'
-        ])->findOrFail($user->id);
+        $query = Project::query()
+            ->whereHas('projectRoles', function ($query) use ($user) {
+                $query->whereHas('candidacies', function ($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                });
+            });
 
-        $project = $project->candidacies->pluck('projectRole')->pluck('project')->unique();
+        $builder = $searchableService->handle($query, ['id', 'title', 'created_at', 'updated_at'], [
+            'projectRoles' => ['id', 'role_id'],
+            'domains' => ['name'],
 
-        return ProjectResource::collection($project);
+        ]);
+        $projects = $builder->paginate(1);
+
+        return ProjectResource::collection($projects);
     }
 
 
@@ -473,7 +481,7 @@ class ProjectController extends Controller
             return response()->json(["error" => "vous n'êtes pas connecté"], 401);
         }
 
-        // Pagination avec 6 projets par page
+        // Pagination avec 2 projets par page
         $projects = Project::where('created_by', $user->id)->paginate(2);
 
         return ProjectResource::collection($projects);
