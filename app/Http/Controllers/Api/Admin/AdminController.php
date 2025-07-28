@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\UserResource;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -63,6 +64,28 @@ class AdminController extends Controller
             return response()->json([
                 'message' => 'Utilisateur ' . ($user->state ? 'activé' : 'désactivé') . ' avec succès.',
             ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public  function destroyProject(Request $request, $id)
+    {
+        try {
+            $userConnect = auth()->user();
+
+            if ($userConnect->role !== 'admin') {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+            $project = Project::find($id);
+            if (!$project) {
+                return response()->json(['message' => 'Project not found'], 404);
+            }
+
+            $project->delete();
+
+            return response()->json(['message' => 'Project deleted successfully'], 200);
 
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
