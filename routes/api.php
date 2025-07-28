@@ -88,6 +88,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // ----------------------ROUTES POUR ADMINISTRATION -------------------------------------------//
     Route::get('/users', [AdminController::class, 'index']);
     Route::post('/users/{user}/state', [AdminController::class, 'toggleState']);
+    Route::post('projects/destroy/{id}', [AdminController::class, 'destroyProject']);
 });
 
 
