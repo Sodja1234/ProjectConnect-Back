@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @OA\Schema(
@@ -108,6 +109,7 @@ class Project extends Model
 {
     /** @use HasFactory<\Database\Factories\ProjectFactory> */
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
 
@@ -121,7 +123,8 @@ class Project extends Model
         'visibility',
         'created_by',
         'updated_by',
-        'status_id'
+        'status_id',
+        'deleted_at'
     ];
 
 
@@ -161,7 +164,7 @@ class Project extends Model
     {
         return $this->belongsTo(Status::class);
     }
-    
+
 
     public function candidacies() {
         return $this->hasMany(Candidacy::class);
