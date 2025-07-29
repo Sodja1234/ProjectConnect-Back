@@ -15,6 +15,7 @@ use App\Models\ProjectRole;
 use App\Services\SearchableService;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProjectResource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -126,8 +127,10 @@ class ProjectController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        DB::beginTransaction();
+
         try {
-            // Création du projet
+            // 1. Création du projet
             $project = Project::create([
                 'title' => $request->title,
                 'slug' => Str::slug($request->title),
@@ -136,13 +139,13 @@ class ProjectController extends Controller
                 'date_end' => $request->date_end,
                 'budget' => $request->budget,
                 'location' => $request->location,
-                'status_id' => 1, // En cours par défaut
+                'status_id' => 1,
                 'visibility' => $request->visibility,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
             ]);
 
-            // Attacher les domaines
+            // 2. Attacher les domaines
             if ($request->has('domains')) {
                 $domainIds = collect($request->domains)->map(
                     fn($name) => Domain::firstOrCreate(['name' => $name])->id
@@ -150,7 +153,7 @@ class ProjectController extends Controller
                 $project->domains()->attach($domainIds);
             }
 
-            // Gérer les rôles avec compétences
+            // 3. Gérer les rôles avec compétences
             foreach ($request->role_skills as $entry) {
                 $role = Role::firstOrCreate(['name' => $entry['role']]);
 
@@ -166,35 +169,55 @@ class ProjectController extends Controller
                 $projectRole->skills()->attach($skillIds);
             }
 
-            // Création du chat de groupe lié au projet
-            $groupChat = Chat::create([
-                'type' => 'group',
-                'name' => 'Équipe '.$project->title,
-                'project_id' => $project->id
-            ]);
+            // 4. Création du chat avec vérifications
+            $groupChat = Chat::firstOrCreate(
+                ['project_id' => $project->id],
+                [
+                    'type' => 'group',
+                    'name' => 'Équipe '.$project->title,
+                    'project_id' => $project->id
+                ]
+            );
 
-            // Ajout automatique du créateur au chat
-            $groupChat->users()->attach($user->id);
+            // 5. Ajout du créateur avec vérification des doublons
+            $groupChat->users()->syncWithoutDetaching([$user->id]);
 
-            // Message de bienvenue automatique
+            // 6. Message de bienvenue
             Message::create([
                 'chat_id' => $groupChat->id,
                 'sender_id' => $user->id,
-                'message' => "J'ai créé ce projet '{$project->title}'. Discutons-en ici !"
+                'message' => "Projet '{$project->title}' créé ! Rejoignez la discussion."
             ]);
 
+            DB::commit();
+
             return response()->json([
-                'message' => 'Projet et chat de groupe créés avec succès.',
+                'message' => 'Projet créé avec succès',
                 'data' => [
-                    'project' => $project->load('domains', 'projectRoles.role', 'projectRoles.skills'),
-                    'chat' => $groupChat // Retourne les infos du chat créé
+                    'project' => $project->load([
+                        'domains',
+                        'projectRoles.role',
+                        'projectRoles.skills',
+                        'chat.users:id,name,email'
+                    ]),
+                    'chat_details' => [
+                        'id' => $groupChat->id,
+                        'members_count' => $groupChat->users()->count(),
+                        'first_message' => $groupChat->messages()->first()
+                    ]
                 ]
             ], 201);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur création projet: '.$e->getMessage(), [
+                'user' => $user->id,
+                'request' => $request->all()
+            ]);
+
             return response()->json([
-                'error' => 'Erreur lors de la création du projet',
-                'details' => $e->getMessage(),
+                'error' => 'Erreur lors de la création',
+                'details' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

@@ -8,12 +8,14 @@ use App\Jobs\NotifyApplicationSubmissionJob;
 use App\Mail\ProjectInvitationMail;
 use App\Models\Candidacy;
 use App\Models\Invitation;
+use App\Models\Message;
 use App\Models\Project;
 use App\Models\ProjectRole;
 use App\Models\User;
 use App\Notifications\CandidacyStatusNotification;
 use App\Notifications\JobApplicationNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -359,59 +361,97 @@ class CandidacyController extends Controller
      */
     public function validateCandidacy(Request $request, $candidacyId)
     {
-
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:accepted,declined'
-
         ]);
+
         if ($validator->fails()) {
             return response()->json(["error" => $validator->errors()], 422);
         }
+
         try {
             $user = Auth::user();
-
-            $candidacy = Candidacy::with(['projectRole.project'])->findOrFail($candidacyId);
+            $candidacy = Candidacy::with(['projectRole.project.chat.users'])->findOrFail($candidacyId);
 
             // Vérifier que l'utilisateur est bien le créateur du projet
             if ($candidacy->projectRole->project->created_by !== $user->id) {
                 return response()->json(['message' => 'Seul le propriétaire du projet peut valider cette candidature'], 403);
             }
 
-            // Valider la candidature
+            DB::beginTransaction();
+
+            $chat = $candidacy->projectRole->project->chat;
+            $candidateUserId = $candidacy->user_id;
+            $isCurrentlyInChat = $chat && $chat->users->contains($candidateUserId);
+
             if ($request->status === 'accepted') {
+                // Mettre à jour la candidature
                 $candidacy->update([
                     'is_validated' => true,
                     'status' => 'Accepté',
                 ]);
-                // Notifier l'utilisateur dont la candidature a été validée
+
+                // Ajouter l'utilisateur au chat du projet s'il n'y est pas déjà
+                if ($chat && !$isCurrentlyInChat) {
+                    $chat->users()->attach($candidateUserId);
+
+                    // Envoyer un message de bienvenue dans le chat
+                    Message::create([
+                        'chat_id' => $chat->id,
+                        'sender_id' => $user->id,
+                        'message' => "Bienvenue {$candidacy->user->name} dans le projet en tant que {$candidacy->projectRole->role->name} !"
+                    ]);
+                }
+
+                // Notifier l'utilisateur
                 $candidacy->user->notify(new CandidacyStatusNotification(
                     $candidacy,
                     'accepted'
                 ));
 
             } elseif ($request->status === 'declined') {
+                // Mettre à jour la candidature
                 $candidacy->update([
                     'is_validated' => false,
                     'status' => 'Refusé',
                 ]);
 
-                // Notifier l'utilisateur dont la candidature n'a pas été validée
+                // Retirer l'utilisateur du chat s'il y est
+                if ($chat && $isCurrentlyInChat) {
+                    $chat->users()->detach($candidateUserId);
+
+                    // Envoyer un message d'au revoir
+                    Message::create([
+                        'chat_id' => $chat->id,
+                        'sender_id' => $user->id,
+                        'message' => "{$candidacy->user->name} ne fait plus partie du projet en tant que {$candidacy->projectRole->role->name}."
+                    ]);
+                }
+
+                // Notifier l'utilisateur
                 $candidacy->user->notify(new CandidacyStatusNotification(
                     $candidacy,
                     'rejected'
                 ));
             }
 
+            DB::commit();
+
             return response()->json([
                 'message' => 'Candidature traitée avec succès',
                 'data' => new CandidacyResource($candidacy)
             ]);
+
         } catch (\Throwable $e) {
-            Log::error('Erreur lors de la validation de la candidature: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Erreur lors de la validation de la candidature: ' . $e->getMessage(), [
+                'candidacy_id' => $candidacyId,
+                'user_id' => Auth::id(),
+                'request' => $request->all()
+            ]);
             return response()->json([
                 'message' => 'Une erreur est survenue lors de la validation de la candidature',
-                'trace' => $e->getTrace(),
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

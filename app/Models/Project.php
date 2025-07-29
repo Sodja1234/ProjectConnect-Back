@@ -169,5 +169,10 @@ class Project extends Model
     public function candidacies() {
         return $this->hasMany(Candidacy::class);
     }
+    public function chat()
+    {
+        return $this->hasOne(Chat::class);
+    }
+
 
 }
