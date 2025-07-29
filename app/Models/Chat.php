@@ -39,5 +39,10 @@ class Chat extends Model
     {
         return $this->hasOne(Message::class)->latestOfMany();
     }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
+    }
 }
 
