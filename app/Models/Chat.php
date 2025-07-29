@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Chat extends Model
 {
-    protected $fillable = ['type', 'name'];
+    protected $fillable = ['type', 'name','project_id'];
 
     public function users(): BelongsToMany
     {
