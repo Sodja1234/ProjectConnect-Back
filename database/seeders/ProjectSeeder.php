@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Chat;
 use App\Models\Domain;
+use App\Models\Message;
 use App\Models\Project;
 use App\Models\ProjectRole;
 use App\Models\Role;
@@ -20,12 +22,12 @@ class ProjectSeeder extends Seeder
      */
     public function run()
     {
-        $users = User::take(5)->get();
-
-        if ($users->isEmpty()) {
-            $user = User::factory(10)->create();
-            $users = collect([$user]);
+        // Vérifier et créer au moins 6 utilisateurs si nécessaire
+        if (User::count() < 6) {
+            User::factory(6 - User::count())->create();
         }
+
+        $users = User::all();
 
         // Domaines avec descriptions
         $domains = [
@@ -268,8 +270,47 @@ class ProjectSeeder extends Seeder
 
                 $projectRole->skills()->attach($skills);
             }
+
+            // Création du chat pour le projet
+            $groupChat = Chat::create([
+                'type' => 'group',
+                'name' => 'Équipe '.$project->title,
+                'project_id' => $project->id
+            ]);
+
+            // Ajout du créateur au chat
+            $groupChat->users()->attach($user->id);
+
+            // Message de bienvenue
+            Message::create([
+                'chat_id' => $groupChat->id,
+                'sender_id' => $user->id,
+                'message' => "Projet '{$project->title}' créé ! Rejoignez la discussion."
+            ]);
+
+            // Ajouter d'autres membres au projet et au chat (entre 1 et 4 autres membres)
+            $availableUsers = $users->where('id', '!=', $user->id);
+            $additionalMemberCount = min(4, $availableUsers->count()); // Maximum 4 autres membres
+            $additionalMemberCount = max(1, $additionalMemberCount); // Minimum 1 autre membre
+
+            if ($additionalMemberCount > 0) {
+                $additionalMembers = $availableUsers->random($additionalMemberCount);
+
+                foreach ($additionalMembers as $member) {
+                    $groupChat->users()->attach($member->id);
+
+                    // Message de bienvenue pour les nouveaux membres
+                    Message::create([
+                        'chat_id' => $groupChat->id,
+                        'sender_id' => $user->id,
+                        'message' => "Bienvenue {$member->name} dans le projet '{$project->title}' !"
+                    ]);
+                }
+            }
         }
+
     }
+
 
     protected function generateRoleDescription($roleName, $projectTitle)
     {
