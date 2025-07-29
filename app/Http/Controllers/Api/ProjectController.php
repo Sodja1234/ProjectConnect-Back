@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 
+use App\Models\Chat;
+use App\Models\Message;
 use App\Models\Skill;
 
 use App\Models\Role;
@@ -120,12 +122,12 @@ class ProjectController extends Controller
 
         $user = $request->user();
 
-
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
         try {
+            // Création du projet
             $project = Project::create([
                 'title' => $request->title,
                 'slug' => Str::slug($request->title),
@@ -134,7 +136,7 @@ class ProjectController extends Controller
                 'date_end' => $request->date_end,
                 'budget' => $request->budget,
                 'location' => $request->location,
-                'status_id' => 1, // En cours par defaut
+                'status_id' => 1, // En cours par défaut
                 'visibility' => $request->visibility,
                 'created_by' => $user->id,
                 'updated_by' => $user->id,
@@ -143,8 +145,7 @@ class ProjectController extends Controller
             // Attacher les domaines
             if ($request->has('domains')) {
                 $domainIds = collect($request->domains)->map(
-                    fn($name) =>
-                    Domain::firstOrCreate(['name' => $name])->id
+                    fn($name) => Domain::firstOrCreate(['name' => $name])->id
                 );
                 $project->domains()->attach($domainIds);
             }
@@ -153,25 +154,43 @@ class ProjectController extends Controller
             foreach ($request->role_skills as $entry) {
                 $role = Role::firstOrCreate(['name' => $entry['role']]);
 
-                // Créer une entrée project_role
                 $projectRole = ProjectRole::create([
                     'project_id' => $project->id,
                     'role_id' => $role->id,
                     'description' => $entry['description'] ?? null,
                 ]);
 
-                // Attacher les skills à ce project_role
                 $skillIds = collect($entry['skill'])->map(
-                    fn($name) =>
-                    Skill::firstOrCreate(['name' => $name])->id
+                    fn($name) => Skill::firstOrCreate(['name' => $name])->id
                 );
                 $projectRole->skills()->attach($skillIds);
             }
 
+            // Création du chat de groupe lié au projet
+            $groupChat = Chat::create([
+                'type' => 'group',
+                'name' => 'Équipe '.$project->title,
+                'project_id' => $project->id
+            ]);
+
+            // Ajout automatique du créateur au chat
+            $groupChat->users()->attach($user->id);
+
+            // Message de bienvenue automatique
+            Message::create([
+                'chat_id' => $groupChat->id,
+                'sender_id' => $user->id,
+                'message' => "J'ai créé ce projet '{$project->title}'. Discutons-en ici !"
+            ]);
+
             return response()->json([
-                'message' => 'Projet créé avec succès.',
-                'data' => $project->load('domains', 'roles'),
+                'message' => 'Projet et chat de groupe créés avec succès.',
+                'data' => [
+                    'project' => $project->load('domains', 'projectRoles.role', 'projectRoles.skills'),
+                    'chat' => $groupChat // Retourne les infos du chat créé
+                ]
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Erreur lors de la création du projet',
