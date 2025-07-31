@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\ProfileUserEditRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 
 class ProfileController extends Controller
@@ -82,7 +82,7 @@ class ProfileController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Profile updated successfully"
+     *         description="Profil mis à jour avec succès."
      *     ),
      *     @OA\Response(
      *         response=422,
@@ -90,37 +90,29 @@ class ProfileController extends Controller
      *     )
      * )
      */
-    public function update(Request $request)
+    public function update(ProfileUserEditRequest $request, FileUploadService $upload)
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+        $user = $request->user();
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'job_title' => 'nullable|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'portfolio_url' => 'nullable|url',
-            'availability' => 'nullable|string|max:255',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'about' => 'nullable|text|max:255',
-        ]);
+        $profile = $user->profile()->firstOrNew([], ['user_id' => $user->id]);
 
-        if ($request->hasFile('profile_photo')) {
-            // Supprimer l'ancienne photo si elle existe
-            if ($user->profile_photo) {
-                Storage::disk('public')->delete($user->profile_photo);
-            }
+        $newProfileImage = $upload->update(
+            $request->file('profile_photo'),
+            'profiles',
+            $profile->profile_photo ?? ''
+        );
 
-            $path = $request->file('profile_photo')->store('profile_photos', 'public');
-            $validated['profile_photo'] = $path;
-        }
+        $data = [...$request->validated(), 'profile_photo' => $newProfileImage];
 
-        $user->update($validated);
+        $hasUpdate = $profile->fill($data)->isDirty()
+            ? $profile->save()
+            : false;
+
+        $message = $hasUpdate ? 'Profil mis à jour avec succès.' : 'Échec de la mise à jour du profil.';
 
         return response()->json([
-            'message' => 'Profil mis à jour avec succès.',
-            'user' => $user
+            'message' => $message,
+            'state' => $hasUpdate ? 'success' : 'error',
         ]);
     }
 }

@@ -12,12 +12,22 @@ class Profile extends Model
         'location',
         'job_title',
         'portfolio_url',
-        'availability',
+        'is_availability',
         'profile_photo',
         'about'
     ];
 
-
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string,string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_availlability' => 'boolean',
+        ];
+    }
     public function user()
     {
         return $this->belongsTo(User::class);
