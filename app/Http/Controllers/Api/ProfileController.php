@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\ProfileUserEditRequest;
+use App\Http\Resources\ProfileUserResource;
 use App\Models\User;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Auth;
@@ -52,10 +53,9 @@ class ProfileController extends Controller
     public function myProfile()
     {
         $user = Auth::user();
+        $user->load('profile');
 
-        return response()->json([
-            'user' => $user
-        ]);
+        return new ProfileUserResource($user);
     }
 
     /**
