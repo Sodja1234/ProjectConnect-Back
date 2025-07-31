@@ -5,20 +5,22 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Resources\AuthResource;
 use App\Models\Candidacy;
 use App\Models\Invitation;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Verified;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyEmailController extends Controller
 {
 
-    public function __invoke(int $id, string $hash,Request $request): JsonResponse|AuthResource
+    public function __invoke(int $id, string $hash, Request $request): JsonResponse|AuthResource
     {
-
         $token = $request->query('token');
         $user = User::findOrFail($id);
 
@@ -33,29 +35,60 @@ class VerifyEmailController extends Controller
             return $this->getAuthUser($user);
         }
 
-        if ($user->markEmailAsVerified()) {
-            event(new Verified($user));
-        }
-        $invitation =Invitation::where('token', $token)->first();
+        DB::beginTransaction();
+        try {
+            if ($user->markEmailAsVerified()) {
+                event(new Verified($user));
+            }
 
-        if ($invitation) {
+            $invitation = Invitation::where('token', $token)->first();
 
-            Candidacy::create([
-                'user_id' => $user->id,
-                'project_role_id'=> $invitation->project_role_id,
-                'is_validated'=>true,
-                'status'=>'Invité'
+            if ($invitation) {
+                // Créer la candidature
+                $candidacy = Candidacy::create([
+                    'user_id' => $user->id,
+                    'project_role_id' => $invitation->project_role_id,
+                    'is_validated' => true,
+                    'status' => 'Invité'
+                ]);
 
+                // Charger les relations nécessaires
+                $candidacy->load(['projectRole.project.chat.users']);
+
+                // Ajouter l'utilisateur au chat du projet
+                $chat = $candidacy->projectRole->project->chat;
+                if ($chat && !$chat->users->contains($user->id)) {
+                    $chat->users()->attach($user->id);
+
+                    // Envoyer un message de bienvenue dans le chat
+                    Message::create([
+                        'chat_id' => $chat->id,
+                        'sender_id' => $candidacy->projectRole->project->created_by,
+                        'message' => "Bienvenue {$user->name} dans le projet en tant que {$candidacy->projectRole->role->name} !"
+                    ]);
+                }
+
+                // Mettre à jour le statut de l'invitation
+                $invitation->update(['status' => 'accepted']);
+            }
+
+            DB::commit();
+
+            return $this->getAuthUser($user);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la vérification email et traitement de l\'invitation: ' . $e->getMessage(), [
+                'user_id' => $id,
+                'token' => $token
             ]);
 
-            // Mettre à jour le statut de l'invitation
-            $invitation->update(['status' => 'accepted']);
+            return response()->json([
+                'status' => Response::HTTP_INTERNAL_SERVER_ERROR,
+                'message' => 'Une erreur est survenue lors du traitement'
+            ]);
         }
-
-        return $this->getAuthUser($user);
-
     }
-
     private function getAuthUser(User $user): AuthResource
     {
         $token = $user->createToken($user->email)->plainTextToken;
