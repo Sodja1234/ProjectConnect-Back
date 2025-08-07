@@ -6,8 +6,12 @@ use App\Http\Requests\ProfileUserEditRequest;
 use App\Http\Resources\ProfileUserResource;
 use App\Models\User;
 use App\Services\FileUploadService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -113,6 +117,23 @@ class ProfileController extends Controller
         return response()->json([
             'message' => $message,
             'state' => $hasUpdate ? 'success' : 'error',
+        ]);
+    }
+
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', Password::defaults(), 'confirmed'],
+        ]);
+
+        $state = $request->user()->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return response()->json([
+            'state' => $state,
         ]);
     }
 }
