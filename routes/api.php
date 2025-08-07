@@ -83,14 +83,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'myProfile'])->name('profile.me');
     Route::get('/profiles/{user}', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
-
+    Route::put('/profile/change/password', [ProfileController::class, 'changePassword'])
+        ->name('profile.changePassword');
 
     // ----------------------ROUTES POUR ADMINISTRATION -------------------------------------------//
     Route::get('/users', [AdminController::class, 'index']);
     Route::post('/users/{user}/state', [AdminController::class, 'toggleState']);
     Route::post('projects/destroy/{id}', [AdminController::class, 'destroyProject']);
 });
-
-
 
 require __DIR__ . '/api-auth.php';
