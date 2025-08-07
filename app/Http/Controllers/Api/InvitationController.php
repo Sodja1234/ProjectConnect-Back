@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CandidacyResource;
 use App\Models\Candidacy;
 use App\Models\Invitation;
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvitationController extends Controller
@@ -56,7 +59,7 @@ class InvitationController extends Controller
         $user = Auth::user();
 
         // Récupérer la candidature non validée de l'utilisateur connecté
-        $candidacy = Candidacy::where('id', $candidacyId)
+        $candidacy = Candidacy::with(['projectRole.project.chat.users'])->where('id', $candidacyId)
             ->where('user_id', $user->id)
             ->where('is_validated', false)
             ->first();
@@ -78,28 +81,73 @@ class InvitationController extends Controller
             ], 403); // Accès refusé
         }
 
-        // Mettre à jour la candidature selon le statut
-        if ($request->status === 'accepted') {
-            $candidacy->update([
-                'is_validated' => true,
-                'status' => 'Invité', // Statut spécifique pour la candidature
+        DB::beginTransaction();
+        try {
+            $chat = $candidacy->projectRole->project->chat;
+            $isCurrentlyInChat = $chat && $chat->users->contains($user->id);
+
+            // Mettre à jour la candidature selon le statut
+            if ($request->status === 'accepted') {
+                $candidacy->update([
+                    'is_validated' => true,
+                    'status' => 'Invité', // Statut spécifique pour la candidature
+                ]);
+
+                // Ajouter l'utilisateur au chat du projet s'il n'y est pas déjà
+                if ($chat && !$isCurrentlyInChat) {
+                    $chat->users()->attach($user->id);
+
+                    // Envoyer un message de bienvenue dans le chat
+                    Message::create([
+                        'chat_id' => $chat->id,
+                        'sender_id' => $candidacy->projectRole->project->created_by,
+                        'message' => "Bienvenue {$user->name} dans le projet en tant que {$candidacy->projectRole->role->name} !"
+                    ]);
+                }
+
+            } elseif ($request->status === 'declined') {
+                $candidacy->update([
+                    'is_validated' => false,
+                    'status' => 'Refusé', // Statut spécifique pour la candidature
+                ]);
+
+                // Retirer l'utilisateur du chat s'il y est
+                if ($chat && $isCurrentlyInChat) {
+                    $chat->users()->detach($user->id);
+
+                    // Envoyer un message d'au revoir
+                    Message::create([
+                        'chat_id' => $chat->id,
+                        'sender_id' => $candidacy->projectRole->project->created_by,
+                        'message' => "{$user->name} a refusé l'invitation pour le rôle de {$candidacy->projectRole->role->name}."
+                    ]);
+                }
+            }
+
+            // Mettre à jour le statut de l'invitation
+            $invitation->update(['status' => $request->status]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => $request->status === 'accepted'
+                    ? 'Invitation acceptée avec succès.'
+                    : 'Invitation refusée.',
+                'candidacy' => $candidacy,
             ]);
-        } elseif ($request->status === 'declined') {
-            $candidacy->update([
-                'is_validated' => false,
-                'status' => 'Refusé', // Statut spécifique pour la candidature
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la validation de l\'invitation: ' . $e->getMessage(), [
+                'candidacy_id' => $candidacyId,
+                'user_id' => $user->id,
+                'request' => $request->all()
             ]);
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la validation de l\'invitation',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
-
-        // Mettre à jour le statut de l'invitation
-        $invitation->update(['status' => $request->status]);
-
-        return response()->json([
-            'message' => $request->status === 'accepted'
-                ? 'Invitation acceptée avec succès.'
-                : 'Invitation refusée.',
-            'candidacy' => $candidacy,
-        ]);
     }
 
     /**
